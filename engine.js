@@ -52,14 +52,16 @@ var sneeky = function() {
         }
     }
 
-    function updateCoords( coords ) {
-        if( direction == directions.UP ) {
+    function updateCoords() {
+        var coords = trails[0];
+
+        if( direction === directions.UP ) {
             coords[1] -= unit;
-        } else if( direction == directions.RIGHT ) {
+        } else if( direction === directions.RIGHT ) {
             coords[0] += unit;
-        } else if( direction == directions.DOWN ) {
+        } else if( direction === directions.DOWN ) {
             coords[1] += unit;
-        } else if( direction == directions.LEFT ) {
+        } else if( direction === directions.LEFT ) {
             coords[0] -= unit;
         }
 
@@ -74,18 +76,23 @@ var sneeky = function() {
         } else if( coords[1] + unit > canvas.height ) {
             coords[1] = 0;
         }
-        trails.unshift( coords );
+        //console.log(coords );
+        //The following bug
+        //trails.unshift( coords );
+        //But this one works ! WTF ? #answer ?
+        trails.unshift( [ coords[0], coords[1] ] );
     }
 
-    function drawTrail ( coords ) {
-        ctx.fillStyle = mainColor;
-        ctx.fillRect( coords[0], coords[1], unit, unit );
+    function drawTrail () {
+        //Draw the trails
         ctx.fillStyle = trailColor;
         var l = trails.length;
         for( var i = 1; i < l; i++ ) {
-            console.log(i);
             ctx.fillRect( trails[i][0], trails[i][1], unit, unit );
         }
+        //Draw the "head"
+        ctx.fillStyle = mainColor;
+        ctx.fillRect( trails[0][0], trails[0][1], unit, unit );
     }
 
     function tick() {
@@ -97,8 +104,8 @@ var sneeky = function() {
         document.onkeydown = function( e ) {
             changeDirection( e );
         };
-        updateCoords( trails[0] );
-        drawTrail( trails[0] );
+        updateCoords();
+        drawTrail();
         // collisionCheck();
 
         setTimeout( function() { tick(); }, tickSpeed );

@@ -27,7 +27,7 @@ var sneeky = function() {
         var x = Math.round( Math.round( Math.random() * ( canvas.width  - ( unit ) ) ) / unit ) * unit;
         var y = Math.round( Math.round( Math.random() * ( canvas.height - ( unit ) ) ) / unit ) * unit;
 
-        return [ x, y ];
+        return { x : x, y : y };
     }
 
     function changeDirection( e ) {
@@ -56,31 +56,31 @@ var sneeky = function() {
         var coords = trails[0];
 
         if( direction === directions.UP ) {
-            coords[1] -= unit;
+            coords.y -= unit;
         } else if( direction === directions.RIGHT ) {
-            coords[0] += unit;
+            coords.x += unit;
         } else if( direction === directions.DOWN ) {
-            coords[1] += unit;
+            coords.y += unit;
         } else if( direction === directions.LEFT ) {
-            coords[0] -= unit;
+            coords.x -= unit;
         }
 
-        if( coords[0] < 0 ) {
-            coords[0] = canvas.width - unit;
-        } else if( coords[0] + unit > canvas.width ) {
-            coords[0] = 0;
+        if( coords.x < 0 ) {
+            coords.x = canvas.width - unit;
+        } else if( coords.x + unit > canvas.width ) {
+            coords.x = 0;
         }
 
-        if( coords[1] < 0 ) {
-            coords[1] = canvas.height - unit;
-        } else if( coords[1] + unit > canvas.height ) {
-            coords[1] = 0;
+        if( coords.y < 0 ) {
+            coords.y = canvas.height - unit;
+        } else if( coords.y + unit > canvas.height ) {
+            coords.y = 0;
         }
         //console.log(coords );
         //The following bug
         //trails.unshift( coords );
         //But this one works ! WTF ? #answer ?
-        trails.unshift( [ coords[0], coords[1] ] );
+        trails.unshift( { x : coords.x, y : coords.y } );
     }
 
     function drawTrail () {
@@ -88,11 +88,11 @@ var sneeky = function() {
         ctx.fillStyle = trailColor;
         var l = trails.length;
         for( var i = 1; i < l; i++ ) {
-            ctx.fillRect( trails[i][0], trails[i][1], unit, unit );
+            ctx.fillRect( trails[i].x, trails[i].y, unit, unit );
         }
         //Draw the "head"
         ctx.fillStyle = mainColor;
-        ctx.fillRect( trails[0][0], trails[0][1], unit, unit );
+        ctx.fillRect( trails[0].x, trails[0].y, unit, unit );
     }
 
     function tick() {

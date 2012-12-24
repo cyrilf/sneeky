@@ -2,10 +2,12 @@ var sneeky = function() {
 
     var canvas = document.getElementById( 'canvas' );
     var ctx = canvas.getContext( '2d' );
-    var unit = 20;
+    var unit = 11;
+    var trailUnit = 2;
+    var trailOffset = Math.floor(unit / 2);
 
     var tock = true;
-    var tickSpeed = 100;
+    var tickSpeed = 40;
 
     var keys = [ [ 87, 38 ], [ 39, 68 ], [ 40, 83 ], [ 37, 65 ] ];
     var directions = {
@@ -20,8 +22,8 @@ var sneeky = function() {
     var trails = [];
     trails.unshift( randomCoords() );
 
-    var mainColor = 'black';
-    var trailColor = 'rgba( 130, 241, 103, 0.7)';
+    var mainColor = '#2186ed';
+    var trailColor = 'rgba(103, 228, 252, 0.7)';
 
     function randomCoords() {
         var x = Math.round( Math.round( Math.random() * ( canvas.width  - ( unit ) ) ) / unit ) * unit;
@@ -32,7 +34,7 @@ var sneeky = function() {
 
     function changeDirection( e ) {
         //prevent default function of the keys
-        for( i = 0; i < keys.length; i++ ) {
+        for( i = 0, k = keys.length; i < k; i++ ) {
             if( e.which == keys[i][0] || e.which == keys[i][1] ) {
                 e.preventDefault();
             }
@@ -85,19 +87,45 @@ var sneeky = function() {
 
     function drawTrail () {
         //Draw the trails
-        ctx.fillStyle = trailColor;
-        var l = trails.length;
-        for( var i = 1; i < l; i++ ) {
-            ctx.fillRect( trails[i].x, trails[i].y, unit, unit );
+        if (trails.length > 2) {
+            ctx.clearRect(trails[2].x, trails[2].y, unit, unit);
+            ctx.strokeStyle = trailColor;
+            if (Math.abs(trails[0].x - trails[2].x) <= 20 && Math.abs(trails[0].y - trails[2].y) <= 20 && trails[0].x != 0 && trails[0].y != 0) {
+                ctx.moveTo(trails[0].x + trailOffset, trails[0].y + trailOffset);
+                ctx.lineTo(trails[2].x + trailOffset, trails[2].y + trailOffset);
+            } else if (Math.abs(trails[0].x - trails[2].x) > 20) {
+                if (trails[0].x == 0) {
+                    ctx.moveTo(canvas.width, trails[0].y + trailOffset);
+                    ctx.lineTo(trails[2].x + trailOffset, trails[2].y + trailOffset);
+                    ctx.moveTo(trails[0].x + trailOffset, trails[0].y + trailOffset);
+                    ctx.lineTo(0, trails[2].y + trailOffset);
+                } else {
+                    ctx.moveTo(trails[2].x + trailOffset + unit, trails[2].y + trailOffset);
+                    ctx.lineTo(0, trails[2].y + trailOffset);
+                    ctx.moveTo(trails[0].x + trailOffset, trails[0].y + trailOffset);
+                    ctx.lineTo(canvas.width, trails[2].y + trailOffset);
+                }
+            } else if (Math.abs(trails[0].y - trails[2].y) > 20) {
+                if (trails[0].y == 0) {
+                    ctx.moveTo(trails[0].x + trailOffset, canvas.height);
+                    ctx.lineTo(trails[2].x + trailOffset, trails[2].y + trailOffset);
+                    ctx.moveTo(trails[0].x + trailOffset, trails[0].y + trailOffset);
+                    ctx.lineTo(trails[2].x + trailOffset, 0);
+                } else {
+                    ctx.moveTo(trails[2].x + trailOffset, trails[2].y + trailOffset + unit);
+                    ctx.lineTo(trails[2].x + trailOffset, 0);
+                    ctx.moveTo(trails[0].x + trailOffset, trails[0].y + trailOffset);
+                    ctx.lineTo(trails[2].x + trailOffset, canvas.height);
+                }
+            }
+            ctx.stroke();
         }
         //Draw the "head"
         ctx.fillStyle = mainColor;
-        ctx.fillRect( trails[0].x, trails[0].y, unit, unit );
+        ctx.fillRect(trails[0].x, trails[0].y, unit, unit);
     }
 
     function tick() {
-        //clear
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         //just one direction per loopGame
         tock = true;
 

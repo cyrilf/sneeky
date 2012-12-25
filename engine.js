@@ -58,7 +58,7 @@ var Sneeky = {
                 break;
             case directions.RIGHT :
                 p.x = this.canvas.width - ( 2 * this.unit );
-                p.y = Math.round( ( ( this.canvas.height / 2 ) + 2 * this.unit ) / this.unit ) * this.unit;
+                p.y = Math.round( ( ( this.canvas.height / 2 ) - 2 * this.unit ) / this.unit ) * this.unit;
                break;
             case directions.DOWN :
                 p.x = Math.round( ( ( this.canvas.width / 2 ) + 2 * this.unit ) / this.unit ) * this.unit;
@@ -66,7 +66,7 @@ var Sneeky = {
                 break;
             case directions.LEFT :
                 p.x = this.unit;
-                p.y = Math.round( ( ( this.canvas.height / 2 ) - 2 * this.unit ) / this.unit ) * this.unit;
+                p.y = Math.round( ( ( this.canvas.height / 2 ) + 2 * this.unit ) / this.unit ) * this.unit;
                 break;
         }
         return p;
@@ -148,13 +148,25 @@ var Sneeky = {
 
     drawTrail : function( player ) {
         //Draw the trails
-        this.ctx.fillStyle = player.trailColor;
-        for( var i = 1, l = player.trails.length; i < l; i++ ) {
-            this.ctx.fillRect( player.trails[i].x, player.trails[i].y, this.unit, this.unit );
+        if ( player.trails.length > 2 ) {
+            //this.ctx.shadowBlur = 5;
+            //this.ctx.shadowColor = player.trailColor;
+            this.ctx.strokeStyle = player.trailColor;
+            this.ctx.beginPath();
+            this.ctx.moveTo(player.trails[0].x, player.trails[0].y);
+            this.ctx.lineTo(player.trails[2].x, player.trails[2].y);
+            this.ctx.stroke();
+            this.ctx.closePath();
         }
-        //Draw the "head"
-        this.ctx.fillStyle = player.mainColor;
-        this.ctx.fillRect( player.trails[0].x, player.trails[0].y, this.unit, this.unit );
+    },
+
+    clearTrail : function( player ) {
+        var x, y;
+        for( var i = 2, l = player.trails.length; i < l; i++ ) {
+            x = player.trails[i].x;
+            y = player.trails[i].y;
+            this.ctx.clearRect( x-this.unit, y-this.unit, 2*this.unit, 2*this.unit );
+        }
     },
 
     collisionCheck : function( player ) {
@@ -164,20 +176,23 @@ var Sneeky = {
             return this.loose( player );
         }
         //Colissions with others or himself
-        var headC = [];
-        headC[0] = [head.x, head.x + this.unit];
-        headC[1] = [head.y, head.y + this.unit];
+        var headC = { xpos : { begin : head.x, end : head.x + this.unit }, ypos : { begin : head.y, end : head.y + this.unit } };
         var lp = this.players.length;
         //For each players
         for( var i = 0; i < lp; i ++) {
             var p = this.players[i];
             var lt = p.trails.length;
             //for each trails in this player
-            for( var j = 2; j < lt; j++ ) {
-                var trail = [ [ p.trails[j].x, p.trails[j].x + this.unit ], [ p.trails[j].y, p.trails[j].y + this.unit ] ];
+            for( var j = 1; j < lt; j++ ) {
+                //don't hit with his own head --'
+                if( p == player && j <= 1)
+                    continue;
+                var x = p.trails[j].x;
+                var y = p.trails[j].y;
+                var trail = { xpos : { begin : x, end : x + this.unit }, ypos : { begin : y, end : y + this.unit } };
 
-                var hitX = this.hitCheck( headC[0], trail[0] );
-                var hitY = this.hitCheck( headC[1], trail[1] );
+                var hitX = this.hitCheck( headC.xpos, trail.xpos );
+                var hitY = this.hitCheck( headC.ypos, trail.ypos );
 
                 if( hitX && hitY ) {
                     return this.loose( player );
@@ -190,7 +205,7 @@ var Sneeky = {
 
     hitCheck : function( head, segment ) {
         var a,b;
-        if( head[0] < segment[0] ) {
+        if( head.begin < segment.begin ) {
             a = head;
             b = segment;
         } else {
@@ -198,7 +213,7 @@ var Sneeky = {
             b = head;
         }
 
-        if( a[1] > b[0] ) {
+        if( a.end > b.begin ) {
             return true;
         } else {
             return false;
@@ -208,8 +223,15 @@ var Sneeky = {
     loose : function( player ) {
         //play an animation for loosing --> TODO!
         player.loose();
+
+        //Remove him from the player
         this.players.splice( this.players.indexOf( player ), 1 );
+        //Clear his trail
+        this.clearTrail( player );
+        //Add him to the loosers
         this.loosers.push( player );
+
+        //If only one player left, he's the winner !
         if( this.players.length == 1) {
             this.win( this.players[0] );
             return 'only_one';
@@ -223,14 +245,15 @@ var Sneeky = {
     },
 
     reset : function() {
-        this.ctx.font="40px verdana";
-        var p = this.players[0];
         var c = this.canvas;
         var ctx = this.ctx;
-        this.ctx.fillStyle = p.mainColor;
-        this.ctx.fillRect( 0, 0, canvas.width, canvas.height );
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillText( p.name, ( ( c.width/2 ) - ( ctx.measureText( p.name ).width / 2 ) ), ( c.height/2 ) );
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.font="40px verdana";
+        var p = this.players[0];
+        ctx.fillStyle = p.mainColor;
+        ctx.fillRect( 0, 0, c.width, c.height );
+        ctx.fillStyle = 'white';
+        ctx.fillText( p.name, ( ( c.width/2 ) - ( ctx.measureText( p.name ).width / 2 ) ), ( c.height/2 ) );
 
         //WTF ? this.originPlayers depends on this.players who's depending on the first array Oo'
         //Sad to add the winner to the looser.. #todo
@@ -239,14 +262,11 @@ var Sneeky = {
         this.setStartPosition();
         this.loosers = [];
 
-        setTimeout( function() { self.tick(); }, 2500 );
         var self = this;
+        setTimeout( function() { ctx.clearRect(0, 0, c.width, c.height); self.tick(); }, 2500 );
     },
 
     tick : function() {
-        //clear
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         //For each player we update his position, etc..
         var player, state;
         for( var i = 0, l = this.players.length; i < l; i++) {
@@ -265,6 +285,21 @@ var Sneeky = {
 
         var self = this;
         setTimeout( function() { self.tick(); }, this.tickSpeed );
+    },
+
+    startAnimation : function() {
+        var c = this.canvas;
+        var ctx = this.ctx;
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.font = "70px verdana";
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect( 0, 0, c.width, c.height );
+        ctx.fillStyle = 'rgba(103, 228, 252, 1)';
+        ctx.fillText( 'Sneeky', ( ( c.width/2 ) - ( ctx.measureText( 'Sneeky' ).width / 2 ) ), ( c.height/2 ) );
+
+        //launch the game loop
+        var self = this;
+        setTimeout( function() { ctx.clearRect(0, 0, c.width, c.height); self.tick(); }, 2000 );
     },
 
     init : function( params ) {
@@ -289,8 +324,8 @@ var Sneeky = {
         document.onkeydown = function( e ) {
             self.changeDirection( e );
         };
-        //Launch the game loop
-        this.tick();
+
+        this.startAnimation();
     }
 };
 
@@ -310,8 +345,8 @@ var green = new Player({
 
 var blue = new Player({
     name : 'Blue',
-    mainColor : 'royalblue',
-    trailColor : 'skyblue',
+    mainColor : '#2186ed',
+    trailColor : 'rgba(103, 228, 252, 1)',
     origin : directions.DOWN
 });
 
@@ -325,7 +360,7 @@ var players = [ ezio, green, blue, yellow ];
 
 Sneeky.init({
     canvas : document.getElementById( 'canvas' ),
-    unit : 10,
-    tickSpeed : 45,
+    unit : 1,
+    tickSpeed : 5,
     players : players
 });

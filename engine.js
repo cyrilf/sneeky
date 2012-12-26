@@ -25,14 +25,17 @@ function Player ( params ) {
     this.origin = params.origin;
     this.trails = [];
 
+    //Called when the player loose
     this.loose = function() {
         console.log(this.name + ' LOOSE...');
     };
 
+    //Called when the player win
     this.win = function() {
         console.log(this.name + ' WIN !!!');
     };
 
+    //Reset the player to his deault options
     this.reset = function() {
         this.direction = directions.inverse( this.origin );
         this.trails = [];
@@ -43,12 +46,14 @@ function Player ( params ) {
 //Class Sneeky
 var Sneeky = {
 
+    //generate random coords
     randomCoords : function() {
         var x = Math.round( Math.random() * ( this.canvas.width  - ( this.unit ) ) / this.unit ) * this.unit;
         var y = Math.round( Math.random() * ( this.canavs.height - ( this.unit ) ) / this.unit ) * this.unit;
         return { x : x, y : y };
     },
 
+    //define the start position
     getStartPosition : function( start ) {
         var p = { x : 0, y : 0 }, x = 0, y = 0;
         switch( start ) {
@@ -72,6 +77,7 @@ var Sneeky = {
         return p;
     },
 
+    //define the start position
     setStartPosition : function() {
         var l = this.players.length;
         for( var i = 0; i < l; i++ ) {
@@ -79,6 +85,7 @@ var Sneeky = {
         }
     },
 
+    //change the direction of the current player
     changeDirection : function( e ) {
         //prevent default function of the keys
         for( var i = 0, l = this.keys.length; i < l; i++ ) {
@@ -120,60 +127,63 @@ var Sneeky = {
         }
     },
 
+    //Update the position of the current player
+    //Return true if update is ok
+    //Return false if collision
     updateTrails : function( player ) {
-        var head = player.trails[0];
+        var x = player.trails[0].x;
+        var y = player.trails[0].y;
 
         if( player.direction === directions.UP ) {
-            head.y -= this.unit;
+            y -= this.unit;
         } else if( player.direction === directions.RIGHT ) {
-            head.x += this.unit;
+            x += this.unit;
         } else if( player.direction === directions.DOWN ) {
-            head.y += this.unit;
+            y += this.unit;
         } else if( player.direction === directions.LEFT ) {
-            head.x -= this.unit;
+            x -= this.unit;
         }
 
         //Test for colissions
-        var state = this.collisionCheck( player );
-        if (state == 'loose' || state == 'only_one' ) {
-            return state;
+        if ( !this.collisionCheck( player ) ) {
+            player.trails.unshift( { x : x, y : y } );
+            return true;
         } else {
-            //The following is bugging
-            //player.trails.unshift( head );
-            //But this one works ! WTF ? #answer ?
-            player.trails.unshift( { x : head.x, y : head.y } );
-            return 'good'; //everything's fine
+            return false;
         }
     },
 
+    //Draw the trail of the current player
     drawTrail : function( player ) {
-        //Draw the trails
-        if ( player.trails.length > 2 ) {
-            //this.ctx.shadowBlur = 5;
-            //this.ctx.shadowColor = player.trailColor;
-            this.ctx.strokeStyle = player.trailColor;
-            this.ctx.beginPath();
-            this.ctx.moveTo(player.trails[0].x, player.trails[0].y);
-            this.ctx.lineTo(player.trails[2].x, player.trails[2].y);
-            this.ctx.stroke();
-            this.ctx.closePath();
-        }
+        this.ctx.beginPath();
+        //this.ctx.shadowBlur = this.unit;
+        //this.ctx.shadowColor = player.trailColor;
+        this.ctx.strokeStyle = player.trailColor;
+        this.ctx.lineWidth = this.unit;
+        this.ctx.moveTo(player.trails[0].x, player.trails[0].y);
+        this.ctx.lineTo(player.trails[1].x, player.trails[1].y);
+        this.ctx.stroke();
+        this.ctx.closePath();
     },
 
+    //Clear the trail of the current player (when he loose)
     clearTrail : function( player ) {
         var x, y;
-        for( var i = 2, l = player.trails.length; i < l; i++ ) {
+        for( var i = 0, l = player.trails.length; i < l; i++ ) {
             x = player.trails[i].x;
             y = player.trails[i].y;
             this.ctx.clearRect( x-this.unit, y-this.unit, 2*this.unit, 2*this.unit );
         }
     },
 
+    //Test fort a collision with the borders or another player
+    //return true if collision
+    //return false if no collission
     collisionCheck : function( player ) {
         var head = player.trails[0];
         //Colissions with borders
         if( head.x < 0 || ( head.x + this.unit > this.canvas.width ) || head.y < 0 || ( head.y + this.unit > this.canvas.height ) ) {
-            return this.loose( player );
+            return true;
         }
         //Colissions with others or himself
         var headC = { xpos : { begin : head.x, end : head.x + this.unit }, ypos : { begin : head.y, end : head.y + this.unit } };
@@ -183,7 +193,7 @@ var Sneeky = {
             var p = this.players[i];
             var lt = p.trails.length;
             //for each trails in this player
-            for( var j = 1; j < lt; j++ ) {
+            for( var j = 0; j < lt; j++ ) {
                 //don't hit with his own head --'
                 if( p == player && j <= 1)
                     continue;
@@ -195,7 +205,7 @@ var Sneeky = {
                 var hitY = this.hitCheck( headC.ypos, trail.ypos );
 
                 if( hitX && hitY ) {
-                    return this.loose( player );
+                    return true;
                 }
             }
         }
@@ -220,6 +230,7 @@ var Sneeky = {
         }
     },
 
+    //called when a player loose
     loose : function( player ) {
         //play an animation for loosing --> TODO!
         player.loose();
@@ -230,20 +241,14 @@ var Sneeky = {
         this.clearTrail( player );
         //Add him to the loosers
         this.loosers.push( player );
-
-        //If only one player left, he's the winner !
-        if( this.players.length == 1) {
-            this.win( this.players[0] );
-            return 'only_one';
-        } else {
-            return 'loose';
-        }
     },
 
+    //called when a player win
     win : function( player ) {
         player.win();
     },
 
+    //reset the game when all player has loose
     reset : function() {
         var c = this.canvas;
         var ctx = this.ctx;
@@ -255,7 +260,7 @@ var Sneeky = {
         ctx.fillStyle = 'white';
         ctx.fillText( p.name, ( ( c.width/2 ) - ( ctx.measureText( p.name ).width / 2 ) ), ( c.height/2 ) );
 
-        //WTF ? this.originPlayers depends on this.players who's depending on the first array Oo'
+        //WTF ? this.originPlayers depends on this.players who's depending on players Oo'
         //Sad to add the winner to the looser.. #todo
         this.loosers.unshift(p);
         this.players = this.loosers;
@@ -266,20 +271,25 @@ var Sneeky = {
         setTimeout( function() { ctx.clearRect(0, 0, c.width, c.height); self.tick(); }, 2500 );
     },
 
+    //game loop
     tick : function() {
         //For each player we update his position, etc..
         var player, state;
         for( var i = 0, l = this.players.length; i < l; i++) {
             player = this.players[i];
-            state = this.updateTrails( player );
-            if( state == 'good' ) {
+
+            if ( this.updateTrails( player ) ) {
                 this.drawTrail( player );
-            } else if( state == 'loose' ) {
-                //someone fails so we recalculate the length
-                l = this.players.length;
-            } else if( state == 'only_one' ) {
-                this.reset();
-                return;
+            } else {
+                this.loose ( player );
+                //If only one player left, he's the winner !
+                if( this.players.length == 1) {
+                    this.win( this.players[0] );
+                    this.reset();
+                    return;
+                } else {
+                    l = this.players.length;
+                }
             }
         }
 
@@ -287,6 +297,7 @@ var Sneeky = {
         setTimeout( function() { self.tick(); }, this.tickSpeed );
     },
 
+    //first animation
     startAnimation : function() {
         var c = this.canvas;
         var ctx = this.ctx;
@@ -302,19 +313,19 @@ var Sneeky = {
         setTimeout( function() { ctx.clearRect(0, 0, c.width, c.height); self.tick(); }, 2000 );
     },
 
+    //initialisation of the canvas + parameters
     init : function( params ) {
         //Params
         this.unit = params.unit;
         this.tickSpeed = params.tickSpeed;
         this.players = params.players;
-        //usefull for the reset
-        //OBJECT REFERENCE !!!! TODO
         this.originPlayers = params.player;
         this.loosers = [];
 
         //Canvas + styles
         this.canvas = params.canvas;
         this.ctx    = this.canvas.getContext( '2d' );
+        this.ctx.lineCap = 'round';
 
         this.setStartPosition();
 

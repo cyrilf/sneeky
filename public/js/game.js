@@ -92,18 +92,16 @@ var Sneeky = {
 
     // Draw a player in the canvas
     drawPlayer : function( player ) {
-        if( player.trails.length > 1 ) {
-            var ctx = this.ctx;
-            ctx.beginPath();
-            //ctx.shadowBlur  = this.unit;
-            //ctx.shadowColor = player.color;
-            ctx.strokeStyle = player.color;
-            ctx.lineWidth   = this.unit;
-            ctx.moveTo( player.trails[0].x, player.trails[0].y );
-            ctx.lineTo( player.trails[1].x, player.trails[1].y );
-            ctx.stroke();
-            ctx.closePath();
-        }
+        var ctx = this.ctx;
+        ctx.beginPath();
+        //ctx.shadowBlur  = this.unit;
+        //ctx.shadowColor = player.color;
+        ctx.strokeStyle = player.color;
+        ctx.lineWidth   = this.unit;
+        ctx.moveTo( player.trails[0].x, player.trails[0].y );
+        ctx.lineTo( player.trails[1].x, player.trails[1].y );
+        ctx.stroke();
+        ctx.closePath();
     },
 
     // A player win

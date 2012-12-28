@@ -167,9 +167,7 @@ var gameLoop = function() {
                 // Init the players
                 players[i].init();
             }
-            // If no winner it's because he's playing alone
-            // OR
-            // Someone deconnect
+            // If no winner it's because he's playing alone or someone deconnect
             if( !winner )
                 winner = players[0];
 
@@ -183,9 +181,24 @@ var gameLoop = function() {
             // Wait for 1.5 sec ( animation on the client ) and relaunch the game
             setTimeout( function() { newGame(); }, 1500 );
         }
+
+        var playersSocket = [];
+        for ( i = 0, players.length; i < l; i++) {
+            var p = players[i];
+            var pSocket = {
+                id: p.id,
+                isPlaying: p.isPlaying,
+                color: p.color,
+                trails: [ p.trails[0], p.trails[1] ]
+            };
+            if( !pSocket.trails[1] ) // At the first loop p.trails[1] doesn't exist,
+                                     // so to avoid an error we made it the same as p.trails[0]
+                pSocket.trails[1] = pSocket.trails[0];
+            playersSocket.push( pSocket );
+        }
         // Send infos to the client
         io.sockets.emit( "update", {
-            players: players
+            players: playersSocket
         } );
     }
     // Wait for a refresh time and call himself

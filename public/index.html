@@ -2,16 +2,15 @@
 <html>
     <head>
         <title>Sneeky</title>
-        <style type="text/css">
-          * { margin: 0; padding: 0; }
-          html { height: 100%; overflow: hidden; }
-          body { height: 100%; }
-          #canvas { background: black; }
-        </style>
+        <link rel="stylesheet" type="text/css" href="/styles/style.css">
     </head>
     <body>
-        <canvas id="canvas" width="800" height="800"></canvas>
-        <script src="http://localhost:2323/socket.io/socket.io.js"></script>
-        <script src="js/game.js"></script>
+        <div id="gameZone">
+          <canvas id="canvas" width="800" height="800"></canvas>
+          <div id="playerInfos"></div>
+        </div>
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" src="Directions.js"></script>
+        <script type="text/javascript" src="/js/game.js"></script>
     </body>
 </html>

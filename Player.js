@@ -1,28 +1,7 @@
 /**************************************************
-** DIRECTIONS
-**************************************************/
-var Directions = {
-    UP : 0,
-    RIGHT : 1,
-    DOWN : 2,
-    LEFT : 3,
-
-    inverse : function( d ) {
-        if( d == this.UP )
-            return this.DOWN;
-        else if( d == this.RIGHT )
-            return this.LEFT;
-        else if( d == this.DOWN )
-            return this.UP;
-        else
-            return this.RIGHT;
-    }
-};
-exports.Directions = Directions;
-
-/**************************************************
 ** PLAYER
 **************************************************/
+var Directions = require( "./Directions" ).Directions;
 var Player = function( params ) {
     var id        = params.id,
         color     = params.color,
@@ -31,7 +10,7 @@ var Player = function( params ) {
         origin    = params.origin,
         trails    = [],
         direction,
-        isPlaying = true;
+        isPlaying = false;
 
 	// Init the player to his default options
     var init = function() {

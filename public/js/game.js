@@ -14,6 +14,8 @@ var Sneeky = {
         this.ctx         = this.canvas.getContext( '2d' );
         this.ctx.lineCap = 'round';
 
+        this.playerInfos = params.playerInfos;
+
         // Keys to move our player
         this.keys        = [ 38, 39, 40, 37 ];
 
@@ -21,6 +23,7 @@ var Sneeky = {
         this.socket      = params.socket;
 
         //this.startAnimation();
+        this.localPlayer = {};
 
         // Start listening for events
         this.setEventHandlers();
@@ -31,6 +34,14 @@ var Sneeky = {
         var self = this;
         document.onkeydown = function( e ) {
             self.changeDirection( e );
+        };
+
+        this.canvas.onclick = function ( e ) {
+            self.changeDirection( e );
+        };
+
+        this.canvas.ontouchstart = function( e ) {
+          self.changeDirection( e );
         };
 
         // Socket disconnection
@@ -55,14 +66,43 @@ var Sneeky = {
 
     // Change the direction of the current player
     changeDirection : function( e ) {
-        for ( var k in this.keys ) {
-            if( e.which == this.keys[k] ) {
-                e.preventDefault();
-                this.socket.emit( "movePlayer", {
-                    direction: k
-                } );
-                break;
+        var newD;
+        var d = this.localPlayer.direction;
+        e.preventDefault();
+        // Touch or click
+        if ( e.touches || e.type == 'click' ) {
+            var xMouse, yMouse;
+            // Touch
+            if( e.touches ) {
+                xMouse = e.touches[0].pageX - this.canvas.parentNode.offsetLeft;
+                yMouse = e.touches[0].pageY - this.canvas.parentNode.offsetTop;
+            } else if( e.type == 'click' ) { // Click
+                xMouse = e.pageX - this.canvas.parentNode.offsetLeft;
+                yMouse = e.pageY - this.canvas.parentNode.offsetTop;
             }
+            var x = this.localPlayer.trails[0].x;
+            var y = this.localPlayer.trails[0].y;
+            if( yMouse < y && ( d != Directions.UP && d != Directions.DOWN ) )
+                newD = Directions.UP;
+            else if( xMouse > x && ( d != Directions.RIGHT && d != Directions.LEFT ) )
+                newD = Directions.RIGHT;
+            else if( yMouse > y && ( d != Directions.UP && d != Directions.DOWN ) )
+                newD = Directions.DOWN;
+            else if( xMouse < x && ( d != Directions.RIGHT && d != Directions.LEFT ) )
+                newD = Directions.LEFT;
+        } else { //Keys
+            for ( var k in this.keys ) {
+                if( e.which == this.keys[k] ) {
+                    if ( d != Directions.inverse( k ) && d != k )
+                        newD = k;
+                    break;
+                }
+            }
+        }
+        if( newD !== undefined ) {
+            this.socket.emit( "movePlayer", {
+                direction: newD
+            } );
         }
     },
 
@@ -79,6 +119,7 @@ var Sneeky = {
     // On a new game
     newGame : function() {
         Sneeky.ctx.clearRect( 0, 0, Sneeky.canvas.width, Sneeky.canvas.height );
+        Sneeky.playerInfos.elmt.innerHTML = Sneeky.playerInfos.color;
     },
 
     // Update the position
@@ -87,6 +128,8 @@ var Sneeky = {
         for( var i = 0, l = Sneeky.players.length; i < l; i++) {
             if( Sneeky.players[i].isPlaying )
                 Sneeky.drawPlayer( Sneeky.players[i] );
+            if( Sneeky.players[i].id == Sneeky.id )
+                Sneeky.localPlayer = Sneeky.players[i];
         }
     },
 
@@ -110,9 +153,12 @@ var Sneeky = {
             ctx       = Sneeky.ctx;
         ctx.font      = "40px verdana";
         ctx.fillStyle = data.color;
-        ctx.fillRect( 0, 0, c.width, c.height );
+        ctx.clearRect( 0, 0, c.width, c.height );
+        ctx.fillRect( 0, ( c.height / 3 ), c.width, ( c.height / 3 ) - 30 );
         ctx.fillStyle = 'white';
         ctx.fillText( data.color, ( ( c.width / 2 ) - ( ctx.measureText( data.color ).width / 2 ) ), ( c.height / 2 ) );
+        if( Sneeky.id == data.id )
+            Sneeky.playerInfos.elmt.innerHTML = 'You win !!!';
         console.log( data.color + ' WIN !!!' );
     },
 
@@ -125,6 +171,8 @@ var Sneeky = {
             y = looser.trails[i].y;
             Sneeky.ctx.clearRect( x - Sneeky.unit, y - Sneeky.unit, 2 * Sneeky.unit, 2 * Sneeky.unit );
         }
+        if( Sneeky.id == looser.id )
+            Sneeky.playerInfos.elmt.innerHTML = 'You loose..';
         console.log( looser.color + ' LOOSE...' );
     },
 
@@ -146,7 +194,7 @@ var Sneeky = {
 ** INIT THE CONNECTION AND THE GAME
 **************************************************/
 // Initialize socket connection
-var socket = io.connect( "http://localhost", { port: 2323, transports: ["websocket"] } );
+var socket = io.connect( window.location.hostname, { port: 2323, transports: ["websocket"] } );
 socket.on("initSneeky", initSneeky);
 
 function initSneeky( data ) {
@@ -155,10 +203,19 @@ function initSneeky( data ) {
     canvas.width  = data.canvas.width;
     canvas.height = data.canvas.height;
 
+    //Show who's playing
+    var playerInfos = {
+        elmt: document.getElementById( 'playerInfos' ),
+        color: data.color
+    };
+    playerInfos.elmt.style.backgroundColor = data.color;
+    playerInfos.elmt.innerHTML = data.color;
+
     Sneeky.init({
-        canvas  : document.getElementById( 'canvas' ),
-        unit    : data.unit,
-        socket  : socket,
-        id      : data.id
+        canvas      : canvas,
+        playerInfos : playerInfos,
+        unit        : data.unit,
+        socket      : socket,
+        id          : data.id
     });
 }

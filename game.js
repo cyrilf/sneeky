@@ -2,9 +2,26 @@
 ** NODE.JS REQUIREMENTS
 **************************************************/
 var util       = require( "util" ),					// Utility resources (logging, object inspection, etc)
-    io         = require( "socket.io" ),			// Socket.IO
     Player     = require( "./Player" ).Player,      // Player class
-    Directions = require( "./Player" ).Directions;  // Directions enum
+    Directions = require( "./Directions" ).Directions;  // Directions enum
+
+var app     = require( "express" )(),
+    server  = require( "http" ).createServer( app ),
+    io      = require( "socket.io" ).listen( server );               // Socket.IO
+
+server.listen(2323);
+app.get('/', function (req, res) {
+  res.sendfile('./public/index.html');
+});
+app.get('/js/game.js', function (req, res) {
+  res.sendfile('./public/js/game.js');
+});
+app.get('/Directions.js', function (req, res) {
+  res.sendfile('./Directions.js');
+});
+app.get('/styles/style.css', function (req, res) {
+  res.sendfile('./public/styles/style.css');
+});
 
 /**************************************************
 ** GAME VARIABLES
@@ -31,11 +48,8 @@ function init() {
     unit        = 1;
     refreshTime = 5;
 
-    colors  = [ 'firebrick', 'yellowgreen', 'DodgerBlue ', 'goldenrod', 'purple', 'orange' ];
+    colors  = [ 'Firebrick', 'Yellowgreen', 'DodgerBlue ', 'Goldenrod', 'Purple', 'Orange' ];
     origins = [ Directions.UP, Directions.DOWN, Directions.LEFT, Directions.RIGHT ];
-
-	// Set up Socket.IO to listen on port 2323
-	io = io.listen( 2323 );
 
 	// Configure Socket.IO
 	io.configure( function() {
@@ -114,9 +128,7 @@ function onMovePlayer( data ) {
         util.log( "Player not found (err move): " + this.id );
         return;
     }
-    // Lock this if he try to move in the opposite direction
-    if( movePlayer.direction != Directions.inverse( data.direction ) )
-        movePlayer.direction = data.direction;
+    movePlayer.direction = data.direction;
 }
 
 // Socket client has disconnected
@@ -129,6 +141,9 @@ function onClientDisconnect() {
         util.log( "Player not found (err disconnect): " + this.id );
         return;
     }
+
+    origins.unshift( removePlayer.origin );
+    colors.unshift( removePlayer.color );
 
     // Remove player from players array
     players.splice( players.indexOf( removePlayer ), 1 );
@@ -173,7 +188,8 @@ var gameLoop = function() {
 
             // Say to the client who won
             io.sockets.emit( "playerWin", {
-                name : winner.name,
+                id    : winner.id,
+                name  : winner.name,
                 color : winner.color
             } );
             // The game is over
@@ -189,6 +205,7 @@ var gameLoop = function() {
                 id: p.id,
                 isPlaying: p.isPlaying,
                 color: p.color,
+                direction: p.direction,
                 trails: [ p.trails[0], p.trails[1] ]
             };
             if( !pSocket.trails[1] ) // At the first loop p.trails[1] doesn't exist,

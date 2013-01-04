@@ -5,23 +5,16 @@ var util       = require( "util" ),					// Utility resources (logging, object in
     Player     = require( "./Player" ).Player,      // Player class
     Directions = require( "./Directions" ).Directions;  // Directions enum
 
-var app     = require( "express" )(),
+var express = require( "express" ),
+    app     = express(),
     server  = require( "http" ).createServer( app ),
     io      = require( "socket.io" ).listen( server );               // Socket.IO
 
-server.listen(2323);
-app.get('/', function (req, res) {
-  res.sendfile('./public/index.html');
-});
-app.get('/js/game.js', function (req, res) {
-  res.sendfile('./public/js/game.js');
-});
-app.get('/Directions.js', function (req, res) {
-  res.sendfile('./Directions.js');
-});
-app.get('/styles/style.css', function (req, res) {
-  res.sendfile('./public/styles/style.css');
-});
+var PORT = 2377;
+util.log( 'Sneeky is waiting for you at localhost:' + PORT + ' !' );
+server.listen( PORT );
+app.use( express.static( __dirname + '/public') );
+app.use( express.static( __dirname ) );
 
 /**************************************************
 ** GAME VARIABLES
@@ -43,10 +36,10 @@ var canvas,
 function init() {
     canvas = {
         width : 800,
-        height : 800
+        height : 600
     };
-    unit        = 1;
-    refreshTime = 5;
+    unit        = 3;
+    refreshTime = 15;
 
     colors  = [ 'Firebrick', 'Yellowgreen', 'DodgerBlue ', 'Goldenrod', 'Purple', 'Orange' ];
     origins = [ Directions.UP, Directions.DOWN, Directions.LEFT, Directions.RIGHT ];
@@ -59,7 +52,7 @@ function init() {
 		io.set( "log level", 2 );
 	} );
 
-    gameIsOn = true;
+    gameIsOn = false;
 
 	// Start listening for events
 	setEventHandlers();
@@ -81,22 +74,39 @@ function onSocketConnection( client ) {
 
     // Add the player to our list
     var infos = addPlayer( client.id );
-    // Say to the client that it can launch the game, we're ready !
-    client.emit( "initSneeky", {
-        id     : client.id,
-        canvas : canvas,
-        unit   : unit,
-        color  : infos.color
-    } );
 
-    // Listen for a player move
-    client.on( "movePlayer", onMovePlayer );
+    if( infos !== false ) {
+        // Say to the client that it can launch the game, we're ready !
+        client.emit( "initSneeky", {
+            id       : client.id,
+            canvas   : canvas,
+            unit     : unit,
+            color    : infos.color,
+            players  : players,
+            gameIsOn : gameIsOn
+        } );
 
-    // Listen for client disconnected
-    client.on( "disconnect", onClientDisconnect );
+        //Someone is here, so the game is on.
+        gameIsOn = true;
+
+        // Listen for a player move
+        client.on( "movePlayer", onMovePlayer );
+
+        // Listen for client disconnected
+        client.on( "disconnect", onClientDisconnect );
+    } else {
+        client.emit( "fullRoom", {
+            playersLength: players.length
+        } );
+    }
 }
 
 function addPlayer( id ) {
+
+    // If already 4 players waiting or playing is to much.
+    if( players.length >= 4 )
+        return false;
+
     // Choose a random color
     var color = colors.shift();
     // Choose a origin
@@ -110,9 +120,12 @@ function addPlayer( id ) {
         canvas : canvas,
         unit   : unit
     } );
-    newPlayer.init();
+    newPlayer.init( gameIsOn );
+
     // Increment the number of player
-    playerInGame += 1;
+    if( !gameIsOn )
+        playerInGame += 1;
+
     // Add him to our list
     players.push( newPlayer );
 
@@ -147,6 +160,17 @@ function onClientDisconnect() {
 
     // Remove player from players array
     players.splice( players.indexOf( removePlayer ), 1 );
+    playerInGame -= 1;
+
+    // If only one player and he disconnects, the gameIsOver
+    if( removePlayer.isPlaying && players.length === 0 ) {
+        gameIsOn = false;
+    }
+
+    // Say it to the client
+    this.broadcast.emit( "playerLoose", {
+        player: removePlayer
+    } );
 
     // Broadcast removed player to connected socket clients
     this.broadcast.emit( "removePlayer", { id: this.id } );
@@ -160,7 +184,7 @@ var gameLoop = function() {
     // If the game is ready
     if( gameIsOn ) {
         var bool = false;
-        var i;
+        var i, l;
         // For each player
         for( i = 0, l = players.length; i < l; i++ ) {
             // If he's playing
@@ -176,7 +200,7 @@ var gameLoop = function() {
         // If only one player is in game, he's the winner
         if( bool ) {
             var winner;
-            for ( i = 0, players.length; i < l; i++) {
+            for ( i = 0, l = players.length; i < l; i++) {
                 if( players[i].isPlaying )
                     winner = players[i];
                 // Init the players
@@ -199,7 +223,7 @@ var gameLoop = function() {
         }
 
         var playersSocket = [];
-        for ( i = 0, players.length; i < l; i++) {
+        for ( i = 0, l = players.length; i < l; i++) {
             var p = players[i];
             var pSocket = {
                 id: p.id,
@@ -246,7 +270,6 @@ var update = function( player ) {
     } else {
         // Else he loose
         playerInGame -=1 ;
-        player.isPlaying = false;
 
         // Say it to the client
         io.sockets.emit( "playerLoose", {
@@ -254,6 +277,7 @@ var update = function( player ) {
         } );
 
         // If only one player left, he's the winner !
+        player.isPlaying = false;
         if( playerInGame <= 1) {
             return false;
         }

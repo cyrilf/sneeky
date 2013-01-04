@@ -13,11 +13,12 @@ var Player = function( params ) {
         isPlaying = false;
 
 	// Init the player to his default options
-    var init = function() {
+    var init = function( gameIsOn ) {
         this.direction = Directions.inverse( origin );
         this.trails    = [];
         this.trails.unshift( getStartPosition( origin ) );
-        this.isPlaying = true;
+        // If the gameIsOn, he can't play else he join
+        this.isPlaying = !gameIsOn;
     };
 
     var getStartPosition = function( start ) {
@@ -27,18 +28,18 @@ var Player = function( params ) {
         switch( start ) {
             case Directions.UP :
                 p.x = Math.round( ( ( c.width / 2 ) - 2 * u ) / u ) * u;
-                p.y = 5 * u;
+                p.y = 10 * u;
                 break;
             case Directions.RIGHT :
-                p.x = c.width - ( 5 * u );
+                p.x = c.width - ( 10 * u );
                 p.y = Math.round( ( ( c.height / 2 ) - 2 * u ) / u ) * u;
                break;
             case Directions.DOWN :
                 p.x = Math.round( ( ( c.width / 2 ) + 2 * u ) / u ) * u;
-                p.y = c.height - ( 5 * u );
+                p.y = c.height - ( 10 * u );
                 break;
             case Directions.LEFT :
-                p.x = 5 * u;
+                p.x = 10 * u;
                 p.y = Math.round( ( ( c.height / 2 ) + 2 * u ) / u ) * u;
                 break;
         }
@@ -51,6 +52,7 @@ var Player = function( params ) {
         id               : id,
         color            : color,
         trails           : trails,
+        origin           : origin,
         direction        : direction,
         isPlaying        : isPlaying
     };

@@ -25,6 +25,11 @@ var Sneeky = {
         //this.startAnimation();
         this.localPlayer = {};
 
+        this.isPlaying = !params.gameIsOn;
+
+        // Draw all the players trails on connection
+        this.firstDraw( params.players );
+
         // Start listening for events
         this.setEventHandlers();
     },
@@ -68,12 +73,12 @@ var Sneeky = {
     changeDirection : function( e ) {
         var newD;
         var d = this.localPlayer.direction;
-        e.preventDefault();
         // Touch or click
         if ( e.touches || e.type == 'click' ) {
             var xMouse, yMouse;
             // Touch
             if( e.touches ) {
+                e.preventDefault();
                 xMouse = e.touches[0].pageX - this.canvas.parentNode.offsetLeft;
                 yMouse = e.touches[0].pageY - this.canvas.parentNode.offsetTop;
             } else if( e.type == 'click' ) { // Click
@@ -93,6 +98,7 @@ var Sneeky = {
         } else { //Keys
             for ( var k in this.keys ) {
                 if( e.which == this.keys[k] ) {
+                    e.preventDefault();
                     if ( d != Directions.inverse( k ) && d != k )
                         newD = k;
                     break;
@@ -131,6 +137,25 @@ var Sneeky = {
             if( Sneeky.players[i].id == Sneeky.id )
                 Sneeky.localPlayer = Sneeky.players[i];
         }
+
+        //Warn the player that he has to wait the end of this game
+        if( !Sneeky.isPlaying ) {
+            Sneeky.notify('infos', 'Wait the end of this game.');
+        }
+    },
+
+    // Draw all the players when the client connect
+    firstDraw : function( players ) {
+        for( var i = 0, l = players.length; i < l; i++ ) {
+            var player = players[i];
+            for( var j = 0, lTrails = player.trails.length; j < ( lTrails - 1 ); j++ ) {
+                var pTmp = {
+                    color : player.color,
+                    trails : [ player.trails[j], player.trails[j + 1] ]
+                };
+                this.drawPlayer( pTmp );
+            }
+        }
     },
 
     // Draw a player in the canvas
@@ -160,6 +185,7 @@ var Sneeky = {
         if( Sneeky.id == data.id )
             Sneeky.playerInfos.elmt.innerHTML = 'You win !!!';
         console.log( data.color + ' WIN !!!' );
+        Sneeky.isPlaying = true;
     },
 
     // A player loose
@@ -187,6 +213,27 @@ var Sneeky = {
         ctx.fillRect( 0, 0, c.width, c.height );
         ctx.fillStyle = 'rgba(103, 228, 252, 1)';
         ctx.fillText( 'Sneeky', ( ( c.width/2 ) - ( ctx.measureText( 'Sneeky' ).width / 2 ) ), ( c.height/2 ) );
+    },
+
+    //Draw a notification (error / infos / success ) on the canvas
+    notify : function( type, message ) {
+        var color = 'grey';
+        if( type == 'success' ) {
+            color = 'yellowgreen';
+        } else if( type == 'error' ) {
+            color = 'firebrick';
+        } else if( type == 'infos' ) {
+            color = 'grey';
+        } else {
+            color = type;
+        }
+        var c         = Sneeky.canvas,
+            ctx       = Sneeky.ctx;
+        ctx.font      = "40px verdana";
+        ctx.fillStyle = color;
+        //ctx.fillRect( 0, ( c.height / 3 ), c.width, ( c.height / 3 ) - 30 );
+        ctx.fillStyle = color;
+        ctx.fillText( message, ( ( c.width / 2 ) - ( ctx.measureText( message ).width / 2 ) ), ( c.height / 2 ) );
     }
 };
 
@@ -194,8 +241,9 @@ var Sneeky = {
 ** INIT THE CONNECTION AND THE GAME
 **************************************************/
 // Initialize socket connection
-var socket = io.connect( window.location.hostname, { port: 2323, transports: ["websocket"] } );
+var socket = io.connect( window.location.hostname, { port: 2377, transports: ["websocket"] } );
 socket.on("initSneeky", initSneeky);
+socket.on("fullRoom", fullRoom);
 
 function initSneeky( data ) {
     console.log("Connected to socket server");
@@ -216,6 +264,16 @@ function initSneeky( data ) {
         playerInfos : playerInfos,
         unit        : data.unit,
         socket      : socket,
-        id          : data.id
+        id          : data.id,
+        players     : data.players,
+        gameIsOn    : data.gameIsOn
     });
+}
+
+// If the romm is full.. you can't play
+function fullRoom( data ) {
+    var elmt = document.getElementById( 'playerInfos' );
+    elmt.style.backgroundColor = 'Firebrick';
+    elmt.style.height = '100px';
+    elmt.innerHTML = "The room is full (" + data.playersLength + "/" + data.playersLength + ") <br> Refresh this page later.";
 }

@@ -10,7 +10,7 @@ var express = require( "express" ),
     server  = require( "http" ).createServer( app ),
     io      = require( "socket.io" ).listen( server );               // Socket.IO
 
-var PORT = 2377;
+var PORT = process.env.PORT || 2377;
 util.log( 'Sneeky is waiting for you at localhost:' + PORT + ' !' );
 server.listen( PORT );
 app.use( express.static( __dirname + '/public') );

@@ -251,7 +251,7 @@ function startAnimation() {
 startAnimation();
 
 // Initialize socket connection
-var socket = io.connect( window.location.hostname, { port: 2377, transports: ["websocket"] } );
+var socket = io.connect( window.location.hostname );
 socket.on("initSneeky", initSneeky);
 socket.on("fullRoom", fullRoom);
 

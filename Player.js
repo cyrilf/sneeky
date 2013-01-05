@@ -10,6 +10,7 @@ var Player = function( params ) {
         origin    = params.origin,
         trails    = [],
         direction,
+        score     = 0,
         isPlaying = false;
 
 	// Init the player to his default options
@@ -51,9 +52,10 @@ var Player = function( params ) {
         getStartPosition : getStartPosition,
         id               : id,
         color            : color,
-        trails           : trails,
         origin           : origin,
+        trails           : trails,
         direction        : direction,
+        score            : score,
         isPlaying        : isPlaying
     };
 };

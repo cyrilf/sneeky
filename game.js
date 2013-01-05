@@ -27,6 +27,7 @@ var canvas,
     origins,
     gameIsOn,
     playerInGame = 0,
+    scoreMax,
     unit,
     refreshTime;
 
@@ -40,8 +41,9 @@ function init() {
     };
     unit        = 3;
     refreshTime = 15;
+    scoreMax    = 50;
 
-    colors  = [ 'Firebrick', 'Yellowgreen', 'DodgerBlue ', 'Goldenrod', 'Purple', 'Orange' ];
+    colors  = [ 'Firebrick', 'Yellowgreen', 'DodgerBlue ', 'Goldenrod' ];
     origins = [ Directions.UP, Directions.DOWN, Directions.LEFT, Directions.RIGHT ];
 
 	// Configure Socket.IO
@@ -83,7 +85,13 @@ function onSocketConnection( client ) {
             unit     : unit,
             color    : infos.color,
             players  : players,
-            gameIsOn : gameIsOn
+            gameIsOn : gameIsOn,
+            scoreMax : scoreMax
+        } );
+
+        client.broadcast.emit( "newPlayer" , {
+            id : client.id,
+            color : infos.color
         } );
 
         //Someone is here, so the game is on.
@@ -163,7 +171,7 @@ function onClientDisconnect() {
     playerInGame -= 1;
 
     // If only one player and he disconnects, the gameIsOver
-    if( removePlayer.isPlaying && players.length === 0 ) {
+    if( players.length === 0 ) {
         gameIsOn = false;
     }
 
@@ -200,22 +208,40 @@ var gameLoop = function() {
         // If only one player is in game, he's the winner
         if( bool ) {
             var winner;
+            var scoreMaxReach = false;
             for ( i = 0, l = players.length; i < l; i++) {
-                if( players[i].isPlaying )
+                if( players[i].isPlaying ) {
                     winner = players[i];
+                    // He wins 3 points
+                    winner.score += 3;
+                    if( winner.score >= scoreMax )
+                        scoreMaxReach = true;
+                }
                 // Init the players
                 players[i].init();
             }
+
             // If no winner it's because he's playing alone or someone deconnect
             if( !winner )
                 winner = players[0];
+
+            var score = winner.score;
+            // If score max reach, reset score for all players
+            if( scoreMaxReach ) {
+                for ( i = 0, l = players.length; i < l; i++) {
+                    players[i].score = 0;
+                }
+                score = 'win this round !';
+            }
 
             // Say to the client who won
             io.sockets.emit( "playerWin", {
                 id    : winner.id,
                 name  : winner.name,
-                color : winner.color
+                color : winner.color,
+                score : score
             } );
+
             // The game is over
             gameIsOn = false;
             // Wait for 1.5 sec ( animation on the client ) and relaunch the game
@@ -230,7 +256,8 @@ var gameLoop = function() {
                 isPlaying: p.isPlaying,
                 color: p.color,
                 direction: p.direction,
-                trails: [ p.trails[0], p.trails[1] ]
+                trails: [ p.trails[0], p.trails[1] ],
+                score: p.score
             };
             if( !pSocket.trails[1] ) // At the first loop p.trails[1] doesn't exist,
                                      // so to avoid an error we made it the same as p.trails[0]
@@ -328,6 +355,9 @@ function collisionCheck ( player ) {
                 var hitY = hitCheck( headC.ypos, trail.ypos );
 
                 if( hitX && hitY ) {
+                    // The player who make him loose, win 1 point
+                    if( p != player )
+                        p.score += 1;
                     return true;
                 }
             }

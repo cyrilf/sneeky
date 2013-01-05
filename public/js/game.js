@@ -22,7 +22,6 @@ var Sneeky = {
         // Socket connection
         this.socket      = params.socket;
 
-        //this.startAnimation();
         this.localPlayer = {};
 
         this.isPlaying = !params.gameIsOn;
@@ -52,9 +51,11 @@ var Sneeky = {
         // Socket disconnection
         this.socket.on( "disconnect", this.onSocketDisconnect );
 
+        // Someone join the game
+        this.socket.on( "newPlayer" , this.onNewPlayer );
+
         // Someone left the game
         this.socket.on( "removePlayer", this.onRemovePlayer );
-
 
         // Launch a new game
         this.socket.on( "newGame", this.newGame );
@@ -117,9 +118,15 @@ var Sneeky = {
         console.log( "Disconnected from socket server" );
     },
 
+    // new player
+    onNewPlayer : function( data ) {
+        var playersElmt = document.getElementById( 'playersInfos' );
+        playersElmt.innerHTML += '<div class="playerInfos" id="p_' + data.id + '" style="border-left: 50px ' + data.color + ' solid">0</div>';
+    },
+
     // Remove player
     onRemovePlayer : function( data ) {
-        console.log( data.id + 'removed' );
+        ( elem = document.getElementById( 'p_' + data.id ) ).parentNode.removeChild(elem);
     },
 
     // On a new game
@@ -136,6 +143,9 @@ var Sneeky = {
                 Sneeky.drawPlayer( Sneeky.players[i] );
             if( Sneeky.players[i].id == Sneeky.id )
                 Sneeky.localPlayer = Sneeky.players[i];
+
+            // Update the score
+            document.getElementById( 'p_' + Sneeky.players[i].id ).innerHTML = Sneeky.players[i].score;
         }
 
         //Warn the player that he has to wait the end of this game
@@ -146,6 +156,7 @@ var Sneeky = {
 
     // Draw all the players when the client connect
     firstDraw : function( players ) {
+        var playersElmt = document.getElementById( 'playersInfos' );
         for( var i = 0, l = players.length; i < l; i++ ) {
             var player = players[i];
             for( var j = 0, lTrails = player.trails.length; j < ( lTrails - 1 ); j++ ) {
@@ -155,6 +166,7 @@ var Sneeky = {
                 };
                 this.drawPlayer( pTmp );
             }
+            playersElmt.innerHTML += '<div class="playerInfos" id="p_' + player.id + '" style="border-left: 50px ' + player.color + ' solid">' + player.score + '</div>';
         }
     },
 
@@ -181,10 +193,9 @@ var Sneeky = {
         ctx.clearRect( 0, 0, c.width, c.height );
         ctx.fillRect( 0, ( c.height / 3 ), c.width, ( c.height / 3 ) - 30 );
         ctx.fillStyle = 'white';
-        ctx.fillText( data.color, ( ( c.width / 2 ) - ( ctx.measureText( data.color ).width / 2 ) ), ( c.height / 2 ) );
+        ctx.fillText( data.color + " : " + data.score, ( ( c.width / 2 ) - ( ctx.measureText( data.color + " : " + data.score ).width / 2 ) ), ( c.height / 2 ) );
         if( Sneeky.id == data.id )
             Sneeky.playerInfos.elmt.innerHTML = 'You win !!!';
-        console.log( data.color + ' WIN !!!' );
         Sneeky.isPlaying = true;
     },
 
@@ -199,20 +210,6 @@ var Sneeky = {
         }
         if( Sneeky.id == looser.id )
             Sneeky.playerInfos.elmt.innerHTML = 'You loose..';
-        console.log( looser.color + ' LOOSE...' );
-    },
-
-
-    // First animation
-    startAnimation : function() {
-        var c    = this.canvas;
-        var ctx  = this.ctx;
-        ctx.clearRect( 0, 0, c.width, c.height );
-        ctx.font = "70px verdana";
-        ctx.fillStyle = 'rgba(255,255,255,0.1)';
-        ctx.fillRect( 0, 0, c.width, c.height );
-        ctx.fillStyle = 'rgba(103, 228, 252, 1)';
-        ctx.fillText( 'Sneeky', ( ( c.width/2 ) - ( ctx.measureText( 'Sneeky' ).width / 2 ) ), ( c.height/2 ) );
     },
 
     //Draw a notification (error / infos / success ) on the canvas
@@ -232,7 +229,6 @@ var Sneeky = {
         ctx.font      = "40px verdana";
         ctx.fillStyle = color;
         //ctx.fillRect( 0, ( c.height / 3 ), c.width, ( c.height / 3 ) - 30 );
-        ctx.fillStyle = color;
         ctx.fillText( message, ( ( c.width / 2 ) - ( ctx.measureText( message ).width / 2 ) ), ( c.height / 2 ) );
     }
 };
@@ -240,6 +236,20 @@ var Sneeky = {
 /**************************************************
 ** INIT THE CONNECTION AND THE GAME
 **************************************************/
+
+// Play and launch the first animation
+function startAnimation() {
+    var c    = document.getElementById( 'canvas' );
+    var ctx  = c.getContext( '2d' );
+    ctx.clearRect( 0, 0, c.width, c.height );
+    ctx.font = "70px verdana";
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fillRect( 0, 0, c.width, c.height );
+    ctx.fillStyle = 'rgba(103, 228, 252, 1)';
+    ctx.fillText( 'Sneeky', ( ( c.width/2 ) - ( ctx.measureText( 'Sneeky' ).width / 2 ) ), ( c.height/2 ) );
+}
+startAnimation();
+
 // Initialize socket connection
 var socket = io.connect( window.location.hostname, { port: 2377, transports: ["websocket"] } );
 socket.on("initSneeky", initSneeky);
@@ -247,13 +257,14 @@ socket.on("fullRoom", fullRoom);
 
 function initSneeky( data ) {
     console.log("Connected to socket server");
+    console.log( "Score Max is : " + data.scoreMax );
     var canvas    = document.getElementById( 'canvas' );
     canvas.width  = data.canvas.width;
     canvas.height = data.canvas.height;
 
     //Show who's playing
     var playerInfos = {
-        elmt: document.getElementById( 'playerInfos' ),
+        elmt: document.getElementById( 'localPlayerInfos' ),
         color: data.color
     };
     playerInfos.elmt.style.backgroundColor = data.color;
@@ -272,7 +283,7 @@ function initSneeky( data ) {
 
 // If the romm is full.. you can't play
 function fullRoom( data ) {
-    var elmt = document.getElementById( 'playerInfos' );
+    var elmt = document.getElementById( 'localPlayerInfos' );
     elmt.style.backgroundColor = 'Firebrick';
     elmt.style.height = '100px';
     elmt.innerHTML = "The room is full (" + data.playersLength + "/" + data.playersLength + ") <br> Refresh this page later.";

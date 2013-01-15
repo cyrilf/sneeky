@@ -49,13 +49,7 @@ function init() {
 	// Configure Socket.IO
 	io.configure( function() {
 		// Only use WebSockets
-		//io.set( "transports", ["websocket"] );
-
-        // Heroku won't actually allow us to use WebSockets
-        // so we have to setup polling instead.
-        // https://devcenter.heroku.com/articles/using-socket-io-with-node-js-on-heroku
-        io.set( "transports", ["xhr-polling"] );
-        io.set( "polling duration", 10 );
+		io.set( "transports", ["websocket"] );
 
 		// Restrict log output
 		io.set( "log level", 2 );

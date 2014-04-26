@@ -1,3 +1,5 @@
+'use strict';
+
 /**************************************************
 ** SNEEKY
 **************************************************/
@@ -88,19 +90,19 @@ var Sneeky = {
             }
             var x = this.localPlayer.trails[0].x;
             var y = this.localPlayer.trails[0].y;
-            if( yMouse < y && ( d != Directions.UP && d != Directions.DOWN ) )
-                newD = Directions.UP;
-            else if( xMouse > x && ( d != Directions.RIGHT && d != Directions.LEFT ) )
-                newD = Directions.RIGHT;
-            else if( yMouse > y && ( d != Directions.UP && d != Directions.DOWN ) )
-                newD = Directions.DOWN;
-            else if( xMouse < x && ( d != Directions.RIGHT && d != Directions.LEFT ) )
-                newD = Directions.LEFT;
+            if( yMouse < y && ( d != directions.UP && d != directions.DOWN ) )
+                newD = directions.UP;
+            else if( xMouse > x && ( d != directions.RIGHT && d != directions.LEFT ) )
+                newD = directions.RIGHT;
+            else if( yMouse > y && ( d != directions.UP && d != directions.DOWN ) )
+                newD = directions.DOWN;
+            else if( xMouse < x && ( d != directions.RIGHT && d != directions.LEFT ) )
+                newD = directions.LEFT;
         } else { //Keys
             for ( var k in this.keys ) {
                 if( e.which == this.keys[k] ) {
                     e.preventDefault();
-                    if ( d != Directions.inverse( k ) && d != k )
+                    if ( d != directions.inverse( k ) && d != k )
                         newD = k;
                     break;
                 }

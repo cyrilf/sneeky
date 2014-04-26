@@ -12,10 +12,10 @@ It requires [node.js](http://nodejs.org/) and [npm](https://npmjs.org/) to works
 
 ##2 - Launch the server
  
-    node game.js
+    node sneeky.js
 
 ##3 - Enjoy :)
-    Your game is ready and wait for you at localhost:2377
+    sneeky is ready and wait for you at localhost:2377
 
 
 [Cyril F - Web developer](http://cyrilf.com)

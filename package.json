@@ -1,12 +1,43 @@
 {
-    "name": "Sneeky",
-    "version": "0.0.1",
-    "engines": {
-    	"node": "0.6.13",
-    	"npm": "1.1.9"
-    },
-    "dependencies": {
-        "express": "~3.0.5",
-        "socket.io":  "~0.9.13"
-    }
+  "name": "sneeky",
+  "version": "0.1.0",
+  "description": "Game of speed, lights and strategy",
+  "main": "sneeky.js",
+  "directories": {
+    "server": "server",
+    "public": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cyrilf/sneeky.git"
+  },
+  "keywords": [
+    "sneeky",
+    "game",
+    "canvas",
+    "socketio",
+    "socket.io",
+    "html5",
+    "multiplayer"
+  ],
+  "author": {
+    "name": "Cyril F",
+    "email": "cyrilf7x@gmail.com",
+    "homepage": "http://cyrilf.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cyrilf/sneeky/issues"
+  },
+  "homepage": "",
+  "engines": {
+    "node": "~0.10.21",
+    "npm": "~1.3.14"
+  },
+  "dependencies": {
+    "socket.io": "~0.9.16",
+    "express": "~4.1.0",
+    "lodash": "~2.4.1",
+    "q": "~1.0.1"
+  }
 }

@@ -88,6 +88,40 @@ var PlayerManager = function(game) {
     return deferred.promise;
   };
 
+  this.move = function() {
+    var deferred = Q.defer();
+
+    var hadCollision;
+    _(game.players).each(function(player) {
+      if(player.isPlaying) {
+        // We need to send him the players (for collision check)
+        // but this isn't a good thing IMO..
+        player.move(game.players).then(function(isGoodMove) {
+          hadCollision = ! isGoodMove;
+          if(hadCollision) {
+            game.activePlayers -= 1;
+
+            // @TODO give it to eventManager
+            // Say it to the client
+            // io.sockets.emit('player:loose', {
+            //   player: player
+            // });
+
+            // If only one player left, he's the winner !
+            player.isPlaying = false;
+            if(game.activePlayers <= 1) {
+              deferred.resolve(false);
+            }
+          }
+        });
+      }
+    });
+
+    deferred.resolve(true);
+
+    return deferred.promise;
+  };
+
   this.isFull = function() {
     var maxPlayerReached = (game.players.length === game.maxPlayers);
 

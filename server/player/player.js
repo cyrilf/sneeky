@@ -1,6 +1,8 @@
 'use strict';
 
-var directions = require('../../common/directions').directions;
+var directions      = require('../../common/directions').directions;
+var Q               = require('q');
+var collisionEngine = require('../collisionEngine');
 
 /**
  * Player class
@@ -59,10 +61,44 @@ var Player = function(config) {
       return p;
   };
 
+  var move = function(players) {
+    var deferred = Q.defer();
+
+    collisionEngine.hasCollision(this, players, this.canvas, this.unit).then(function(collision) {
+      if(! collision) {
+        var x = this.trails[0].x,
+        y = this.trails[0].y,
+        d = this.direction;
+
+        if(d === directions.UP) {
+          y -= unit;
+        } else if(d === directions.RIGHT) {
+          x += unit;
+        } else if(d === directions.DOWN) {
+          y += unit;
+        } else if(d === directions.LEFT) {
+          x -= unit;
+        }
+
+        var trail = { x : x, y : y };
+
+        this.trails.unshift(trail);
+        deferred.resolve(true);
+      } else {
+        deferred.resolve(false);
+      }
+    });
+
+    return deferred.promise;
+  };
+
   return {
     init             : init,
     getStartPosition : getStartPosition,
+    move             : move,
     id               : id,
+    canvas           : canvas,
+    unit             : unit,
     color            : color,
     origin           : origin,
     trails           : trails,

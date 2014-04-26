@@ -3,6 +3,7 @@
 var directions    = require('../../common/directions');
 var PlayerManager = require('../player/playerManager');
 var Q             = require('q');
+var _             = require('lodash');
 
 /**
  * Game
@@ -21,11 +22,8 @@ var Game = function() {
   this.players       = [];
   this.activePlayers = 0;
   this.maxPlayers    = 4;
+  this.refreshTime   = 15;
   this.playerManager = new PlayerManager(this);
-};
-
-Game.prototype.start = function() {
-  console.log('start');
 };
 
 Game.prototype.newPlayer = function(socketId) {
@@ -81,6 +79,95 @@ Game.prototype.onPlayerDisconnect = function(socket) {
   });
 
   return deferred.promise;
+};
+
+Game.prototype.start = function() {
+  var self = this;
+  if(this.isOn) {
+    this.playerManager.move().then(function(someoneWon) {
+      if(someoneWon) {
+        var winner;
+        var scoreMaxReach = false;
+        _(self.players).each(function(player) {
+          if(player.isPlaying) {
+            winner = player;
+            // He wins 3 points
+            winner.score += 3;
+            if(winner.score >= self.scoreMax) {
+              scoreMaxReach = true;
+            }
+          }
+
+          // Init the players
+          player.init();
+        });
+
+        // If no winner it's because he's playing alone or someone disconnect
+        if(! winner) {
+          winner = self.players[0];
+        }
+
+        var score = winner.score;
+        // If score max reach, reset score for all players
+        if(scoreMaxReach) {
+          _(self.players).each(function(player) {
+            player.score = 0;
+          });
+          score = 'win this round!';
+        }
+
+        // @TODO move this to eventManager
+        // Say to the client who won
+        // io.sockets.emit('player:win', {
+        //   id    : winner.id,
+        //   name  : winner.name,
+        //   color : winner.color,
+        //   score : score
+        // } );
+
+        // The game is over
+        self.isOn = false;
+        // Wait for 1.5 sec ( animation on the client ) and relaunch the game
+        setTimeout( function() { self.restart(); }, 1500 );
+      }
+
+      var playersSocket = [];
+      var pSocket;
+      _(self.players).each(function(p) {
+        pSocket = {
+          id        : p.id,
+          isPlaying : p.isPlaying,
+          color     : p.color,
+          direction : p.direction,
+          trails    : [ p.trails[0], p.trails[1] ],
+          score     : p.score
+        };
+        if(! pSocket.trails[1]) { // At the first loop p.trails[1] doesn't exist,
+                                  // so to avoid an error we made it the same as p.trails[0]
+          pSocket.trails[1] = pSocket.trails[0];
+        }
+
+        playersSocket.push(pSocket);
+      });
+
+      // @TODO move this to eventManager
+      // Send infos to the client
+      // io.sockets.emit('game:update', {
+      //     players: playersSocket
+      // });
+    });
+  }
+
+  setTimeout( function() { self.start(); }, self.refreshTime );
+};
+
+Game.prototype.restart = function() {
+  this.activePlayers = this.players.length;
+  this.isOn = true;
+
+  // @TODO
+  // Move this to the eventManager
+  // io.sockets.emit('game:new');
 };
 
 module.exports = Game;

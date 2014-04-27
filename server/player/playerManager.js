@@ -101,10 +101,11 @@ var PlayerManager = function(game) {
 
   /**
    * Move all players and check for collision
+   * @param  {eventManager} eventManager event manager
    * @return {Promise(Player)} null   if there is no winner
    *                           Player if someone won the game
    */
-  this.move = function() {
+  this.move = function(eventManager) {
     var self = this;
     var deferred = Q.defer();
 
@@ -118,11 +119,7 @@ var PlayerManager = function(game) {
           if(hadCollision) {
             game.activePlayers -= 1;
 
-            // @TODO give it to eventManager
-            // Say it to the client
-            // io.sockets.emit('player:loose', {
-            //   player: player
-            // });
+            eventManager.emitPlayerLoose(player);
 
             // If only one player left, he's the winner !
             player.isPlaying = false;

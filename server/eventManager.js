@@ -91,6 +91,52 @@ var eventManager = {
       // Broadcast removed player to connected socket clients
       socket.broadcast.emit('player:remove', { id: socket.id } );
     });
+  },
+
+
+  /**
+   * Emit events
+   */
+
+  /**
+   * Notify that a player won the game
+   * @param  {Player} winner winner
+   * @param  {Int} score     his score
+   */
+  emitPlayerWin: function(winner, score) {
+    this.io.sockets.emit('player:win', {
+      id    : winner.id,
+      name  : winner.name,
+      color : winner.color,
+      score : score
+    });
+  },
+
+  /**
+   * Notify that a player lost
+   * @param  {Player} looser looser
+   */
+  emitPlayerLoose: function(looser) {
+    this.io.sockets.emit('player:loose', {
+      player: looser
+    });
+  },
+
+  /**
+   * Notify players new positions
+   * @param  {Array[Object]} playersSockets players informations
+   */
+  emitPlayersNewPositions: function(playersSockets) {
+    this.io.sockets.emit('game:update', {
+      players: playersSockets
+    });
+  },
+
+  /**
+   * Notify a new game
+   */
+  emitNewGame: function() {
+    this.io.sockets.emit('game:new');
   }
 };
 

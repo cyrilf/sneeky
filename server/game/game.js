@@ -81,7 +81,7 @@ Game.prototype.onPlayerMove = function(data) {
 
 /**
  * A player has disconnected
- * @param  {String} socketId socekt id
+ * @param  {String} socketId socket id
  * @return {Promise(player)} player removed
  */
 Game.prototype.onPlayerDisconnect = function(socketId) {
@@ -98,13 +98,14 @@ Game.prototype.onPlayerDisconnect = function(socketId) {
 
 /**
  * Start a new game
+ * @param  {eventManager} eventManager event manager
  */
-Game.prototype.start = function() {
+Game.prototype.start = function(eventManager) {
   var self = this;
   // If the game is on
   if(this.isOn) {
     // Move the players
-    this.playerManager.move().then(function(winner) {
+    this.playerManager.move(eventManager).then(function(winner) {
       if(winner !== null) {
         var scoreMaxReach = false;
 
@@ -128,20 +129,13 @@ Game.prototype.start = function() {
           score = 'win this round!';
         }
 
-        // @TODO move this to eventManager
-        // Say to the client who won
-        // io.sockets.emit('player:win', {
-        //   id    : winner.id,
-        //   name  : winner.name,
-        //   color : winner.color,
-        //   score : score
-        // } );
+        eventManager.emitPlayerWin(winner, score);
 
         // The game is over
         self.isOn = false;
 
         // Wait for 1.5 sec ( animation on the client ) and relaunch the game
-        setTimeout( function() { self.restart(); }, 1500 );
+        setTimeout( function() { self.restart(eventManager); }, 1500 );
       }
 
       /**
@@ -149,7 +143,7 @@ Game.prototype.start = function() {
        * with new players positions
        */
 
-      var playersSocket = [];
+      var playersSockets = [];
       var pSocket;
       _(self.players).each(function(p) {
         pSocket = {
@@ -165,14 +159,10 @@ Game.prototype.start = function() {
           pSocket.trails[1] = pSocket.trails[0];
         }
 
-        playersSocket.push(pSocket);
+        playersSockets.push(pSocket);
       });
 
-      // @TODO move this to eventManager
-      // Send infos to the client
-      // io.sockets.emit('game:update', {
-      //     players: playersSocket
-      // });
+      eventManager.emitPlayersNewPositions(playersSockets);
     });
   }
 
@@ -181,14 +171,13 @@ Game.prototype.start = function() {
 
 /**
  * Restart the game
+ * @param  {eventManager} eventManager event manager
  */
-Game.prototype.restart = function() {
+Game.prototype.restart = function(eventManager) {
   this.activePlayers = this.players.length;
   this.isOn = true;
 
-  // @TODO
-  // Move this to the eventManager
-  // io.sockets.emit('game:new');
+  eventManager.emitNewGame();
 };
 
 module.exports = Game;

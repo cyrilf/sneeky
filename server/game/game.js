@@ -104,30 +104,20 @@ Game.prototype.start = function() {
   // If the game is on
   if(this.isOn) {
     // Move the players
-    this.playerManager.move().then(function(someoneWon) {
-      if(someoneWon) {
-        var winner;
+    this.playerManager.move().then(function(winner) {
+      if(winner !== null) {
         var scoreMaxReach = false;
+
+        winner.score += 3;
+        if(winner.score >= self.scoreMax) {
+          scoreMaxReach = true;
+        }
 
         // Foreach players we find the winner
         _(self.players).each(function(player) {
-          if(player.isPlaying) {
-            winner = player;
-            // He wins 3 points
-            winner.score += 3;
-            if(winner.score >= self.scoreMax) {
-              scoreMaxReach = true;
-            }
-          }
-
           // Re-init the players
           player.init();
         });
-
-        // If no winner it's because he's playing alone or someone disconnect
-        if(! winner) {
-          winner = self.players[0];
-        }
 
         var score = winner.score;
         // If score max reach, reset score for all players

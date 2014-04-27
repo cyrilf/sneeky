@@ -101,10 +101,11 @@ var PlayerManager = function(game) {
 
   /**
    * Move all players and check for collision
-   * @return {Promise(Boolean)} true if the game state is ok
-   *                            false if someone won the game
+   * @return {Promise(Player)} null   if there is no winner
+   *                           Player if someone won the game
    */
   this.move = function() {
+    var self = this;
     var deferred = Q.defer();
 
     var hadCollision;
@@ -126,14 +127,35 @@ var PlayerManager = function(game) {
             // If only one player left, he's the winner !
             player.isPlaying = false;
             if(game.activePlayers <= 1) {
-              deferred.resolve(false);
+              self.findWinner().then(function(winner) {
+                deferred.resolve(winner);
+              });
             }
           }
         });
       }
     });
 
-    deferred.resolve(true);
+    deferred.resolve(null);
+
+    return deferred.promise;
+  };
+
+  /**
+   * Find the winner in the active player
+   * @return {Promise(Player)} winner
+   */
+  this.findWinner = function() {
+    var deferred = Q.defer();
+
+    _(game.players).each(function(player) {
+      if(player.isPlaying) {
+        deferred.resolve(player);
+      }
+    });
+
+    // If no winner it's because he's playing alone or someone disconnect
+    deferred.resolve(game.players[0]);
 
     return deferred.promise;
   };

@@ -27,6 +27,14 @@ var eventManager = {
     this.io.sockets.on('connection', this.onSocketConnection);
   },
 
+  /**
+   * When someone connect via socket.io
+   *   - send this player his infos (color..)
+   *   - broadcast to everyone that a new player is here
+   *   - listen for events
+   *     (move, disconnect, ..)
+   * @param  {Object} socket the socket.io instance
+   */
   onSocketConnection: function(socket) {
     // Refactor this hard-coded '0', the day we have multi-games
     // at the same time
@@ -60,6 +68,12 @@ var eventManager = {
     });
   },
 
+  /**
+   * When a player disconnect
+   *   - We notify the game
+   *   - We broadcast to everyone that the player loose
+   *   - We broadcast to everyone that the player has disconnected
+   */
   onPlayerDisconnect: function() {
     //!\\ 'this' is equal to the socket in this function,
     //     not the game object
@@ -69,10 +83,10 @@ var eventManager = {
     // at the same time
     var game = gameManager.games[0];
 
-    game.onPlayerDisconnect(socket).then(function(playerRemoved) {
+    game.onPlayerDisconnect(socket.id).then(function(playerRemoved) {
       socket.broadcast.emit('player:loose', {
           player: playerRemoved
-      } );
+      });
 
       // Broadcast removed player to connected socket clients
       socket.broadcast.emit('player:remove', { id: socket.id } );

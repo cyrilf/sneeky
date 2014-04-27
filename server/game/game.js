@@ -26,6 +26,11 @@ var Game = function() {
   this.playerManager = new PlayerManager(this);
 };
 
+/**
+ * New player
+ * @param  {String} socketId socket id
+ * @return {Promise(Object)} new player infos
+ */
 Game.prototype.newPlayer = function(socketId) {
   var self = this;
   var deferred = Q.defer();
@@ -38,6 +43,7 @@ Game.prototype.newPlayer = function(socketId) {
   }
 
   this.playerManager.newPlayer(this, socketId).then(function(newPlayer) {
+    // @TODO re-enable canvas/unit or find better solution
     var infos = {
       id       : socketId,
       // canvas   : canvas,
@@ -57,6 +63,10 @@ Game.prototype.newPlayer = function(socketId) {
   return deferred.promise;
 };
 
+/**
+ * A player moved
+ * @param  {Object} data player new direction
+ */
 Game.prototype.onPlayerMove = function(data) {
   //!\\ 'this' is equal to the socket in this function,
   //     not the game object
@@ -69,25 +79,37 @@ Game.prototype.onPlayerMove = function(data) {
   });
 };
 
-Game.prototype.onPlayerDisconnect = function(socket) {
+/**
+ * A player has disconnected
+ * @param  {String} socketId socekt id
+ * @return {Promise(player)} player removed
+ */
+Game.prototype.onPlayerDisconnect = function(socketId) {
   var deferred = Q.defer();
 
-  console.log('Player has disconnected: ' + socket.id);
+  console.log('Player has disconnected: ' + socketId);
 
-  this.playerManager.removePlayer(socket.id).then(function(playerRemoved) {
+  this.playerManager.removePlayer(socketId).then(function(playerRemoved) {
     deferred.resolve(playerRemoved);
   });
 
   return deferred.promise;
 };
 
+/**
+ * Start a new game
+ */
 Game.prototype.start = function() {
   var self = this;
+  // If the game is on
   if(this.isOn) {
+    // Move the players
     this.playerManager.move().then(function(someoneWon) {
       if(someoneWon) {
         var winner;
         var scoreMaxReach = false;
+
+        // Foreach players we find the winner
         _(self.players).each(function(player) {
           if(player.isPlaying) {
             winner = player;
@@ -98,7 +120,7 @@ Game.prototype.start = function() {
             }
           }
 
-          // Init the players
+          // Re-init the players
           player.init();
         });
 
@@ -127,9 +149,15 @@ Game.prototype.start = function() {
 
         // The game is over
         self.isOn = false;
+
         // Wait for 1.5 sec ( animation on the client ) and relaunch the game
         setTimeout( function() { self.restart(); }, 1500 );
       }
+
+      /**
+       * Send the informations back to the client
+       * with new players positions
+       */
 
       var playersSocket = [];
       var pSocket;
@@ -161,6 +189,9 @@ Game.prototype.start = function() {
   setTimeout( function() { self.start(); }, self.refreshTime );
 };
 
+/**
+ * Restart the game
+ */
 Game.prototype.restart = function() {
   this.activePlayers = this.players.length;
   this.isOn = true;

@@ -16,8 +16,9 @@ var PlayerManager = function(game) {
 
   /**
    * Create a new Player instance
-   * @param {Game} game A game instance
-   * @return {Player} Player instance
+   * @param {Game}   game      Game instance
+   * @param {String} socketId  Socket id
+   * @return {Promise(Player)} Player instance
    */
   this.newPlayer = function(game, socketId) {
     var deferred = Q.defer();
@@ -37,7 +38,7 @@ var PlayerManager = function(game) {
     });
     newPlayer.init(game.isOn);
 
-    // Increment the number of player
+    // Increment the number of active players
     if(! game.isOn) {
       game.activePlayers += 1;
     }
@@ -49,6 +50,11 @@ var PlayerManager = function(game) {
     return deferred.promise;
   };
 
+  /**
+   * find a player by his id
+   * @param  {String} id       player unique id
+   * @return {Promise(Player)} player instance
+   */
   this.findById = function(id) {
     var deferred = Q.defer();
     var playerFound = false;
@@ -64,6 +70,11 @@ var PlayerManager = function(game) {
     return deferred.promise;
   };
 
+  /**
+   * Remove a player by his id
+   * @param  {String} id player unique id
+   * @return {Promise(Player)}    removed player instance
+   */
   this.removePlayer = function(id) {
     var self = this;
     var deferred = Q.defer();
@@ -88,6 +99,11 @@ var PlayerManager = function(game) {
     return deferred.promise;
   };
 
+  /**
+   * Move all players and check for collision
+   * @return {Promise(Boolean)} true if the game state is ok
+   *                            false if someone won the game
+   */
   this.move = function() {
     var deferred = Q.defer();
 
@@ -122,6 +138,11 @@ var PlayerManager = function(game) {
     return deferred.promise;
   };
 
+  /**
+   * Is the game max players reached?
+   * @return {Boolean} true if it's full
+   *                   false otherwise
+   */
   this.isFull = function() {
     var maxPlayerReached = (game.players.length === game.maxPlayers);
 

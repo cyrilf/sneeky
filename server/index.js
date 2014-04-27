@@ -4,6 +4,7 @@ var serverManager = require('./serverManager');
 
 /**
  * sneeky
+ * Object helper to define the public methods
  */
 var sneeky = {
   configure: serverManager.configure,

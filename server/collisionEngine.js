@@ -3,8 +3,21 @@
 var _ = require('lodash');
 var Q = require('q');
 
+/**
+ * collisionEngine is here to deals with every collisions tests
+ * @type {Object}
+ */
 var collisionEngine = {
 
+  /**
+   * Check if a collision occured
+   * @param  {Player}    player  the player we want to check for collision
+   * @param  {[Player]}  players the players (including the current one)
+   * @param  {[type]}    canvas  the canvas size (to be removed)
+   * @param  {[type]}    unit    the unit of the canvas (to be removed)
+   * @return {promise(Boolean)}  true if there is a collision
+   *                             false otherwise
+   */
   hasCollision: function(player, players, canvas, unit) {
     var deferred = Q.defer();
 
@@ -24,6 +37,14 @@ var collisionEngine = {
     return deferred.promise;
   },
 
+  /**
+   * Check if there is a collision with a game boundary
+   * @param  {[type]}  player   the player we want to check for collision
+   * @param  {[type]}  canvas   the canvas size (to be removed)
+   * @param  {[type]}  unit     the unit of the canvas (to be removed)
+   * @return {promise(Boolean)} true if there is a collision
+   *                            false otherwise
+   */
   hasCollisionWithBorder: function(player, canvas, unit) {
     var deferred = Q.defer();
 
@@ -38,7 +59,15 @@ var collisionEngine = {
     return deferred.promise;
   },
 
-  //Colissions with others or himself
+  /**
+   * Check if there is a collision with himself or another player
+   * @param  {Player}    player  the player we want to check for collision
+   * @param  {[Player]}  players the players (including the current one)
+   * @param  {[type]}    canvas  the canvas size (to be removed)
+   * @param  {[type]}    unit    the unit of the canvas (to be removed)
+   * @return {promise(Boolean)}  true if there is a collision
+   *                             false otherwise
+   */
   hasCollisionWithAPlayer: function(player, players, canvas, unit ) {
     var deferred = Q.defer();
 
@@ -76,6 +105,13 @@ var collisionEngine = {
     return deferred.promise;
   },
 
+  /**
+   * Helper function for collision check between two elements
+   * @param  {Object}  head (first element)
+   * @param  {Object}  segment (second element)
+   * @return {Boolean} true if collision
+   *                   false otherwise
+   */
   hitCheck: function(head, segment) {
     var a,b;
     if( head.begin < segment.begin ) {

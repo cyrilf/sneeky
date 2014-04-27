@@ -6,7 +6,7 @@ var collisionEngine = require('../collisionEngine');
 
 /**
  * Player class
- * @param {Object} confi configuration for the player
+ * @param {Object} config configuration for the player
  */
 var Player = function(config) {
   var id        = config.id,
@@ -26,15 +26,26 @@ var Player = function(config) {
   };
   unit = 3;
 
-  // Init the player to his default options
+  /**
+   * Init the player to his default option
+   *   (when a new game start)
+   * @param  {Boolean} gameIsOn true if the game is on
+   */
   var init = function(gameIsOn) {
     this.direction = directions.inverse(origin);
     this.trails    = [];
     this.trails.unshift(getStartPosition(origin));
-    // If the gameIsOn, he can't play else he join
+    // This player is not playing if the game is on
+    // (occurs when a new player join a game already on,
+    //  he have to wait for the end of it)
     this.isPlaying = !gameIsOn;
   };
 
+  /**
+   * get the player start position on the grid
+   * @param  {Int} start  a directions.ENUM
+   * @return {Object}     the start position (x and y)
+   */
   var getStartPosition = function(start) {
     var p = { x : 0, y : 0 };
     var c = canvas,
@@ -61,6 +72,12 @@ var Player = function(config) {
       return p;
   };
 
+  /**
+   * Move a player if necessary (if no collision)
+   * @param  {[Player]} players list of all player (for check collision) (to removed)
+   * @return {Promise(Boolean)} true if no collision occured
+   *                            false otherwise
+   */
   var move = function(players) {
     var deferred = Q.defer();
 

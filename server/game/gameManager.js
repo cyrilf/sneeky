@@ -13,7 +13,7 @@ var gameManager = {
 
   /**
    * Create a new Game instance
-   * @return {Game} Game instance
+   * @return {Promise(Game)} Game instance
    */
   newGame: function() {
     var deferred = Q.defer();

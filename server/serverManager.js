@@ -45,10 +45,11 @@ var serverManager = {
     this.server.listen(this.port);
     eventManager.listen();
 
-    var game = gameManager.newGame();
-    game.start(eventManager);
+    gameManager.newGame().then(function(game) {
+      game.start(eventManager);
 
-    console.log(this.name + ' is ready at localhost:' + this.port);
+      console.log(this.name + ' is ready at localhost:' + this.port);
+    });
   }
 };
 

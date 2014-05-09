@@ -41,7 +41,7 @@ var eventManager = {
     var game = gameManager.games[0];
 
     game.newPlayer(socket.id).then(function(infos) {
-      socket.emit('initSneeky', {
+      socket.emit('game:init', {
         id       : socket.id,
         // canvas   : canvas,
         // unit     : unit,
@@ -61,9 +61,9 @@ var eventManager = {
 
       // Listen for socket disconnected
       socket.on('disconnect', eventManager.onPlayerDisconnect);
-    }, function(errorName, value) {
-      socket.emit(errorName, {
-        players: value
+    }, function(inGamePlayers) {
+      socket.emit('game:fullRoom', {
+        inGamePlayers: inGamePlayers
       });
     });
   },

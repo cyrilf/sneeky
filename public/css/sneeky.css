@@ -10,13 +10,7 @@ html {
 
 body {
   height     : 100%;
-  background: -moz-radial-gradient(center, ellipse cover,  rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%); /* FF3.6+ */
-  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,rgba(0,0,0,0.1)), color-stop(100%,rgba(0,0,0,0.65))); /* Chrome,Safari4+ */
-  background: -webkit-radial-gradient(center, ellipse cover,  rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.65) 100%); /* Chrome10+,Safari5.1+ */
-  background: -o-radial-gradient(center, ellipse cover,  rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.65) 100%); /* Opera 12+ */
-  background: -ms-radial-gradient(center, ellipse cover,  rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.65) 100%); /* IE10+ */
-  background: radial-gradient(ellipse at center,  rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.65) 100%); /* W3C */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1a000000', endColorstr='#a6000000',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+  background : rgba(127, 140, 141,1.0);
 }
 
 #gameZone {
@@ -27,7 +21,7 @@ body {
 }
 
 #canvas {
-  background : black;
+  background : rgba(52, 73, 94,1.0);
 }
 
 #localPlayerInfos {
@@ -35,7 +29,7 @@ body {
   height     : 50px;
   text-align : center;
   font-size  : 39px;
-  color      : white;
+  color      : rgba(236, 240, 241,1.0);
 }
 
 .playersInfos {

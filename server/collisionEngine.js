@@ -1,7 +1,6 @@
 'use strict';
 
 var _ = require('lodash');
-var Q = require('q');
 
 /**
  * collisionEngine is here to deals with every collisions tests
@@ -19,22 +18,10 @@ var collisionEngine = {
    *                             false otherwise
    */
   hasCollision: function(player, players, canvas, unit) {
-    var deferred = Q.defer();
 
-    this.hasCollisionWithBorder(player, canvas, unit).then(function(result) {
-      if(result === true) {
-        return true;
-      } else {
-        return this.hasCollisionWithAPlayer(player, players, canvas, unit);
-      }
-    }).then(function(result) {
-      deferred.resolve(result);
+    return this.hasCollisionWithBorder(player, canvas, unit).then(function(result) {
+      return result || this.hasCollisionWithAPlayer(player, players, canvas, unit);
     });
-
-    // No colissions, well done !
-    deferred.resolve(false);
-
-    return deferred.promise;
   },
 
   /**
@@ -46,63 +33,61 @@ var collisionEngine = {
    *                            false otherwise
    */
   hasCollisionWithBorder: function(player, canvas, unit) {
-    var deferred = Q.defer();
+    return new Promise(function(resolve, reject) {
 
-    var head = player.trails[0];
-    if(head.x < 0 || (head.x + unit > canvas.width) ||
-       head.y < 0 || (head.y + unit > canvas.height)) {
-        deferred.resolve(true);
-    } else {
-      deferred.resolve(false);
-    }
-
-    return deferred.promise;
+      var head = player.trails[0];
+      if(head.x < 0 || (head.x + unit > canvas.width) ||
+         head.y < 0 || (head.y + unit > canvas.height)) {
+          resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
   },
 
   /**
    * Check if there is a collision with himself or another player
-   * @param  {Player}    player  the player we want to check for collision
-   * @param  {[Player]}  players the players (including the current one)
-   * @param  {[type]}    canvas  the canvas size (to be removed)
-   * @param  {[type]}    unit    the unit of the canvas (to be removed)
-   * @return {promise(Boolean)}  true if there is a collision
-   *                             false otherwise
+   * @param  {Player}    currentPlayer the player we want to check for collision
+   * @param  {[Player]}  players       the players (including the current one)
+   * @param  {[type]}    canvas        the canvas size (to be removed)
+   * @param  {[type]}    unit          the unit of the canvas (to be removed)
+   * @return {promise(Boolean)}        true if there is a collision
+         *                             false otherwise
    */
-  hasCollisionWithAPlayer: function(player, players, canvas, unit ) {
-    var deferred = Q.defer();
-
-    var head = player.trails[0];
+  hasCollisionWithAPlayer: function(currentPlayer, players, canvas, unit ) {
+    var head = currentPlayer.trails[0];
     var headC = { xpos : { begin : head.x, end : head.x + unit }, ypos : { begin : head.y, end : head.y + unit } };
     var x, y, trailPosition, hitX, hitY;
 
-    // For each players
-    _(players).each(function(p) {
-      if(p.isPlaying) {
-        _(p.trails).each(function(trail, key) {
-          // Can't hit with his own head --'
-          if(p !== player || key !== 0) {
-            x = trail.x;
-            y = trail.y;
-            trailPosition = { xpos : { begin : x, end : x + unit }, ypos : { begin : y, end : y + unit } };
-
-            hitX = this.hitCheck(headC.xpos, trailPosition.xpos);
-            hitY = this.hitCheck(headC.ypos, trailPosition.ypos);
-
-            if(hitX && hitY) {
-              // The player who make him loose, win 1 point
-              if(p !== player) {
-                p.score += 1;
-              }
-              deferred.resolve(true);
-            }
-          }
-        });
-      }
+    players = players.filter(function(player) {
+      return player.isPlaying;
     });
 
-    deferred.resolve(false);
+    return Promise.all(players.map(function(player) {
+      return Promise.all(players.trails.map(function(trail, key) {
+        // Can't hit with his own head --'
+        if(player !== currentPlayer || key !== 0) {
+          x = trail.x;
+          y = trail.y;
+          trailPosition = { xpos : { begin : x, end : x + unit }, ypos : { begin : y, end : y + unit } };
 
-    return deferred.promise;
+          return Promise.all([
+            this.hitCheck(headC.xpos, trailPosition.xpos),
+            this.hitCheck(headC.ypos, trailPosition.ypos)
+          ]).then(function(values) {
+            // consider array.some function ES6
+            if(values[0] && values[1]) {
+              // The player who make him loose, win 1 point
+              if(player !== currentPlayer) {
+                player.score += 1;
+              }
+
+              return Promise.reject('collision');
+            }
+          });
+        };
+      }));
+    }));
   },
 
   /**
@@ -122,11 +107,7 @@ var collisionEngine = {
         b = head;
     }
 
-    if( a.end > b.begin ) {
-        return true;
-    } else {
-        return false;
-    }
+    return Promise.resolve(a.end > b.begin);
   }
 };
 

@@ -1,5 +1,6 @@
 'use strict';
 
+require('es6-shim/es6-shim.js');
 var serverManager = require('./serverManager');
 
 /**

@@ -2,7 +2,6 @@
 
 var directions    = require('../../common/directions');
 var PlayerManager = require('../player/playerManager');
-var Q             = require('q');
 var _             = require('lodash');
 
 /**
@@ -33,12 +32,12 @@ var Game = function() {
  */
 Game.prototype.newPlayer = function(socketId) {
   var self = this;
-  var deferred = Q.defer();
+  //return new Promise()
 
   console.log('New player has connected: ' + socketId);
 
   if(this.playerManager.isFull()) {
-    deferred.reject('game:fullRoom', self.players.length);
+    deferred.reject(self.players.length);
     return;
   }
 

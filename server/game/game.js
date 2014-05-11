@@ -1,6 +1,6 @@
 'use strict';
 
-var directions    = require('../../common/directions');
+var directions    = require('../../common/directions').directions;
 var PlayerManager = require('../player/playerManager');
 var _             = require('lodash');
 
@@ -32,34 +32,33 @@ var Game = function() {
  */
 Game.prototype.newPlayer = function(socketId) {
   var self = this;
-  //return new Promise()
 
-  console.log('New player has connected: ' + socketId);
+  return new Promise(function(resolve, reject) {
+    console.log('New player has connected: ' + socketId);
 
-  if(this.playerManager.isFull()) {
-    deferred.reject(self.players.length);
-    return;
-  }
+    if(self.playerManager.isFull()) {
+      reject(self.players.length);
+      return;
+    }
 
-  this.playerManager.newPlayer(this, socketId).then(function(newPlayer) {
-    // @TODO re-enable canvas/unit or find better solution
-    var infos = {
-      id       : socketId,
-      // canvas   : canvas,
-      // unit     : unit,
-      color    : newPlayer.color,
-      players  : self.players,
-      gameIsOn : self.isOn,
-      scoreMax : self.scoreMax
-    };
+    self.playerManager.newPlayer(self, socketId).then(function(newPlayer) {
+      // @TODO re-enable canvas/unit or find better solution
+      var infos = {
+        id       : socketId,
+        // canvas   : canvas,
+        // unit     : unit,
+        color    : newPlayer.color,
+        players  : self.players,
+        gameIsOn : self.isOn,
+        scoreMax : self.scoreMax
+      };
 
-    deferred.resolve(infos);
+      resolve(infos);
+    });
+
+    //Someone is here, so the game is on.
+    self.isOn = true;
   });
-
-  //Someone is here, so the game is on.
-  this.isOn = true;
-
-  return deferred.promise;
 };
 
 /**
@@ -84,15 +83,14 @@ Game.prototype.onPlayerMove = function(data) {
  * @return {Promise(player)} player removed
  */
 Game.prototype.onPlayerDisconnect = function(socketId) {
-  var deferred = Q.defer();
+  var self = this;
+  return new Promise(function(resolve) {
+    console.log('Player has disconnected: ' + socketId);
 
-  console.log('Player has disconnected: ' + socketId);
-
-  this.playerManager.removePlayer(socketId).then(function(playerRemoved) {
-    deferred.resolve(playerRemoved);
+    self.playerManager.removePlayer(socketId).then(function(playerRemoved) {
+      resolve(playerRemoved);
+    });
   });
-
-  return deferred.promise;
 };
 
 /**

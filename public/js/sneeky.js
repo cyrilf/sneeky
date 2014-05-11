@@ -7,4 +7,3 @@ var sneeky = {
 };
 
 sneeky.eventManager.connect(sneeky.game);
-sneeky.game.init();

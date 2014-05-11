@@ -55,6 +55,7 @@ var collisionEngine = {
          *                             false otherwise
    */
   hasCollisionWithAPlayer: function(currentPlayer, players, canvas, unit ) {
+    var self = this;
     var head = currentPlayer.trails[0];
     var headC = { xpos : { begin : head.x, end : head.x + unit }, ypos : { begin : head.y, end : head.y + unit } };
     var x, y, trailPosition, hitX, hitY;
@@ -72,8 +73,8 @@ var collisionEngine = {
           trailPosition = { xpos : { begin : x, end : x + unit }, ypos : { begin : y, end : y + unit } };
 
           return Promise.all([
-            this.hitCheck(headC.xpos, trailPosition.xpos),
-            this.hitCheck(headC.ypos, trailPosition.ypos)
+            self.hitCheck(headC.xpos, trailPosition.xpos),
+            self.hitCheck(headC.ypos, trailPosition.ypos)
           ]).then(function(values) {
             // consider array.some function ES6
             if(values[0] && values[1]) {
@@ -82,7 +83,7 @@ var collisionEngine = {
                 player.score += 1;
               }
 
-              return Promise.reject('collision');
+              return Promise.resolve(true);
             }
           });
         };
@@ -99,7 +100,7 @@ var collisionEngine = {
    */
   hitCheck: function(head, segment) {
     var a,b;
-    if( head.begin < segment.begin ) {
+    if(head.begin < segment.begin) {
         a = head;
         b = segment;
     } else {

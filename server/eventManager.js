@@ -51,7 +51,7 @@ var eventManager = {
         scoreMax : infos.scoreMax
       });
 
-      socket.broadcast.emit('newPlayer' , {
+      socket.broadcast.emit('player:new' , {
         id    : socket.id,
         color : infos.color
       });

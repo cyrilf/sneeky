@@ -1,7 +1,6 @@
 'use strict';
 
 var Game = require('./game');
-var Q    = require('q');
 
 /**
  * gameManager is an helper allowing us to easily work with the game collection
@@ -16,13 +15,13 @@ var gameManager = {
    * @return {Promise(Game)} Game instance
    */
   newGame: function() {
-    var deferred = Q.defer();
+    var self = this;
 
-    var game = new Game();
-    this.addGame(game);
-    deferred.resolve(game);
-
-    return deferred.promise;
+    return new Promise(function(resolve) {
+      var game = new Game();
+      self.addGame(game);
+      resolve(game);
+    });
   },
 
   /**

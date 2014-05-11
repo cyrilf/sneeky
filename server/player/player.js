@@ -1,7 +1,6 @@
 'use strict';
 
 var directions      = require('../../common/directions').directions;
-var Q               = require('q');
 var collisionEngine = require('../collisionEngine');
 
 /**
@@ -80,34 +79,33 @@ Player.prototype.getStartPosition = function(start) {
  *                            false otherwise
  */
 Player.prototype.move = function(players) {
-  var deferred = Q.defer();
+  var self = this;
+  return new Promise(function(resolve) {
+    collisionEngine.hasCollision(self, players, self.canvas, self.unit).then(function(collision) {
+      if(! collision) {
+        var x = self.trails[0].x,
+        y = self.trails[0].y,
+        d = self.direction;
 
-  collisionEngine.hasCollision(this, players, this.canvas, this.unit).then(function(collision) {
-    if(! collision) {
-      var x = this.trails[0].x,
-      y = this.trails[0].y,
-      d = this.direction;
+        if(d === directions.UP) {
+          y -= self.unit;
+        } else if(d === directions.RIGHT) {
+          x += self.unit;
+        } else if(d === directions.DOWN) {
+          y += self.unit;
+        } else if(d === directions.LEFT) {
+          x -= self.unit;
+        }
 
-      if(d === directions.UP) {
-        y -= this.unit;
-      } else if(d === directions.RIGHT) {
-        x += this.unit;
-      } else if(d === directions.DOWN) {
-        y += this.unit;
-      } else if(d === directions.LEFT) {
-        x -= this.unit;
+        var trail = { x : x, y : y };
+
+        self.trails.unshift(trail);
+        resolve(true);
+      } else {
+        resolve(false);
       }
-
-      var trail = { x : x, y : y };
-
-      this.trails.unshift(trail);
-      deferred.resolve(true);
-    } else {
-      deferred.resolve(false);
-    }
+    });
   });
-
-  return deferred.promise;
 };
 
 module.exports = Player;
